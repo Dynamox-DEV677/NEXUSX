@@ -1,0 +1,2184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NEXUS-7 // GRID</title>
+<link rel="icon" type="image/png" href="icon.png"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#080808;--panel:#131313;--card:#191919;--border:#242424;--border2:#333;--grey:#666;--lgrey:#999;--white:#e0e0e0;--accent:#c8c8c8;--green:#7ab87a;--scan:rgba(255,255,255,0.01)}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Share Tech Mono',monospace;color:var(--white)}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,var(--scan) 3px,var(--scan) 4px);pointer-events:none;z-index:9998}
+
+/* ══ WELCOME SCREEN ══ */
+#welcome{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+#welcome.leaving{animation:wLeave .85s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes wLeave{0%{opacity:1;transform:scale(1)}35%{opacity:1;transform:scale(1.018)}100%{opacity:0;transform:scale(1.07)}}
+.w-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);background-size:48px 48px;opacity:0;animation:wFadeIn 2s ease-out forwards}
+.w-glow{position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(200,200,200,0.055) 0%,transparent 68%);animation:wGlow 4s ease-in-out infinite;pointer-events:none}
+@keyframes wGlow{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.3);opacity:1}}
+.w-scan{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(220,220,220,0.22),transparent);animation:wScan 7s linear infinite;top:-1px;pointer-events:none}
+@keyframes wScan{100%{top:100vh}}
+.w-corner{position:absolute;width:28px;height:28px;border-color:var(--border2);border-style:solid;opacity:0;animation:wFadeIn .5s ease-out 1.9s forwards}
+.w-corner.tl{top:22px;left:22px;border-width:1px 0 0 1px}
+.w-corner.tr{top:22px;right:22px;border-width:1px 1px 0 0}
+.w-corner.bl{bottom:22px;left:22px;border-width:0 0 1px 1px}
+.w-corner.br{bottom:22px;right:22px;border-width:0 1px 1px 0}
+@keyframes wFadeIn{to{opacity:1}}
+.w-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;text-align:center}
+.w-robot{width:120px;height:136px;filter:drop-shadow(0 0 28px rgba(200,200,200,0.2));opacity:0;animation:wRobotIn 1.1s cubic-bezier(.2,.8,.3,1) .25s forwards;margin-bottom:26px}
+@keyframes wRobotIn{0%{opacity:0;transform:translateY(-28px) scale(.88)}70%{transform:translateY(3px) scale(1.02)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes wBlink{0%,88%,100%{transform:scaleY(1)}93%{transform:scaleY(.08)}}
+@keyframes wAnt{0%,100%{opacity:1}50%{opacity:.1}}
+@keyframes wArm{0%,100%{transform:rotate(0)}45%{transform:rotate(-7deg)}75%{transform:rotate(4deg)}}
+@keyframes wCore{0%,100%{opacity:.35}50%{opacity:.9}}
+@keyframes wMouth{from{stroke-width:1}to{stroke-width:2.5}}
+.w-robot .r-ant{animation:wAnt 1.4s ease-in-out infinite}
+.w-robot .r-blink{animation:wBlink 3.5s ease-in-out infinite}
+.w-robot .r-arm{transform-origin:36px 55px;animation:wArm 3s ease-in-out infinite}
+.w-robot .r-core{animation:wCore 2.5s ease-in-out infinite}
+.w-robot .r-mouth{animation:wMouth .28s ease-in-out infinite alternate}
+.w-eyegroup{animation:wBlink 3.5s ease-in-out infinite;transform-origin:90px 49px}
+.w-pre{font-family:'Orbitron',monospace;font-size:clamp(9px,1.3vw,12px);font-weight:400;letter-spacing:6px;color:var(--grey);text-transform:uppercase;opacity:0;animation:wUp .7s ease-out .6s forwards}
+.w-title{font-family:'Orbitron',monospace;font-size:clamp(36px,6vw,60px);font-weight:900;letter-spacing:12px;color:var(--white);line-height:1;margin-top:6px;opacity:0;animation:wUp .9s cubic-bezier(.2,.8,.3,1) .82s forwards}
+.w-dash{color:var(--grey)}
+.w-sub{font-size:10px;letter-spacing:4px;color:var(--grey);margin-top:10px;text-transform:uppercase;opacity:0;animation:wUp .7s ease-out 1.05s forwards}
+@keyframes wUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.w-line{width:0;height:1px;margin:30px 0;background:linear-gradient(90deg,transparent,var(--border2),transparent);animation:wLine .9s ease-out 1.25s forwards}
+@keyframes wLine{to{width:300px;opacity:1}}
+.w-btns{display:flex;flex-direction:column;gap:12px;width:300px;opacity:0;animation:wUp .8s ease-out 1.4s forwards}
+.w-btn{width:100%;padding:15px 24px;border-radius:2px;cursor:pointer;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:12px;transition:all .28s;position:relative;overflow:hidden;border:1px solid}
+.w-btn::after{content:'';position:absolute;top:0;left:-120%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.05),transparent);transition:left .55s}
+.w-btn:hover::after{left:150%}
+.w-btn-g{background:transparent;border-color:var(--border2);color:var(--lgrey)}
+.w-btn-g:hover{border-color:#555;color:var(--white);background:#111;box-shadow:0 0 22px rgba(180,180,180,0.07)}
+.w-btn-g.loading{border-color:var(--green);color:var(--green);pointer-events:none}
+.w-btn-d{background:var(--white);border-color:var(--white);color:#080808}
+.w-btn-d:hover{background:#d0d0d0;border-color:#d0d0d0;box-shadow:0 0 30px rgba(220,220,220,0.22);transform:translateY(-2px)}
+
+/* ── LOGIN FORM ── */
+.w-login{display:flex;flex-direction:column;gap:10px;width:300px;opacity:0;animation:wUp .8s ease-out 1.4s forwards}
+.w-input-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border2);border-radius:2px;padding:0 14px;transition:border-color .2s}
+.w-input-row:focus-within{border-color:#555}
+.w-input-label{font-family:'Orbitron',monospace;font-size:8px;font-weight:700;letter-spacing:3px;color:var(--grey);flex-shrink:0;width:22px}
+.w-input{flex:1;background:transparent;border:none;outline:none;color:var(--white);font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:2px;height:44px;caret-color:var(--white)}
+.w-input::placeholder{color:#2a2a2a;font-size:10px;letter-spacing:3px}
+.w-login-error{font-size:9px;letter-spacing:2px;color:#cc6666;min-height:14px;text-align:center}
+.w-login-btns{display:flex;flex-direction:column;gap:10px}
+.w-gicon{width:18px;height:18px;border-radius:50%;background:conic-gradient(#4285f4 0 25%,#ea4335 25% 50%,#fbbc04 50% 75%,#34a853 75%);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:white;font-family:serif;flex-shrink:0}
+.w-boot{margin-top:22px;font-size:9px;letter-spacing:2px;color:#2e2e2e;height:14px;opacity:0;animation:wFadeIn .5s ease-out 1.75s forwards}
+.w-footer{position:absolute;bottom:20px;font-size:8px;letter-spacing:3px;color:#222;font-family:'Share Tech Mono',monospace;opacity:0;animation:wFadeIn .5s ease-out 2.1s forwards}
+
+/* ══ SHELL ══ */
+.shell{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+/* NAVBAR */
+.navbar{flex-shrink:0;height:48px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;position:relative;z-index:8000}
+.nav-logo{font-family:'Orbitron',monospace;font-size:14px;font-weight:900;letter-spacing:5px;color:var(--accent);flex-shrink:0}
+.nav-sep{width:1px;height:22px;background:var(--border2)}
+.page-toggle{display:flex;align-items:center;background:var(--bg);border:1px solid var(--border2);border-radius:3px;padding:3px;gap:2px}
+.ptab{padding:5px 16px;border:none;border-radius:2px;cursor:pointer;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:3px;color:var(--grey);background:transparent;transition:all .22s}
+.ptab:hover{color:var(--lgrey)}
+.ptab.active{background:var(--card);color:var(--white);border:1px solid var(--border2)}
+.map-search-area{flex:1;max-width:420px;display:none;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:2px;padding:0 12px;gap:8px;position:relative;transition:border-color .2s}
+.map-search-area.visible{display:flex}
+.map-search-area:focus-within{border-color:var(--border2)}
+.srch-ico{color:var(--grey);font-size:13px;flex-shrink:0}
+#mapSearchInput{flex:1;background:transparent;border:none;outline:none;color:var(--white);font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:.5px;height:34px}
+#mapSearchInput::placeholder{color:#2e2e2e}
+#mapSearchBtn{background:transparent;border:none;cursor:pointer;color:var(--lgrey);font-family:'Orbitron',monospace;font-size:8px;letter-spacing:2px;padding:4px 8px;transition:color .2s}
+#mapSearchBtn:hover{color:var(--white)}
+#mapSuggestions{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--panel);border:1px solid var(--border2);border-radius:2px;z-index:9999;display:none;max-height:200px;overflow-y:auto}
+#mapSuggestions.open{display:block}
+.sug-item{padding:9px 14px;font-size:11px;letter-spacing:.3px;color:var(--lgrey);cursor:pointer;border-bottom:1px solid var(--border);transition:background .14s;line-height:1.4}
+.sug-item:last-child{border-bottom:none}
+.sug-item:hover{background:var(--card);color:var(--white)}
+.sug-name{color:var(--white);font-size:12px}
+.sug-addr{color:var(--grey);font-size:10px;margin-top:2px}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.nav-clock{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;color:var(--lgrey)}
+.nav-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green);animation:npulse 2s ease-in-out infinite}
+@keyframes npulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* PAGES */
+.page{flex:1;min-height:0;overflow:hidden;display:none;transition:opacity .2s}
+.page.active{display:flex;opacity:1}
+.page:not(.active){opacity:0}
+
+/* ══ CHAT PAGE ══ */
+#pagechat{flex-direction:row}
+.robot-panel{flex-shrink:0;width:258px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:20px 14px 16px;gap:12px;overflow:hidden;position:relative}
+.robot-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#555,transparent)}
+.robot-wrap{position:relative;width:168px;height:192px}
+.robot-svg{width:100%;height:100%;filter:drop-shadow(0 0 18px rgba(180,180,180,.18))}
+.eye-blink{animation:blink 4s ease-in-out infinite}
+@keyframes blink{0%,88%,100%{transform:scaleY(1)}93%{transform:scaleY(.08)}}
+.antenna-light{animation:antpulse 1.6s ease-in-out infinite}
+@keyframes antpulse{0%,100%{opacity:1}50%{opacity:.15}}
+.robot-arm-l{transform-origin:46px 110px;animation:arm-idle 3s ease-in-out infinite}
+@keyframes arm-idle{0%,100%{transform:rotate(0)}40%{transform:rotate(-6deg)}70%{transform:rotate(4deg)}}
+.robot-body-glow{animation:bglow 3.5s ease-in-out infinite}
+@keyframes bglow{0%,100%{opacity:.2}50%{opacity:.5}}
+.chest-scroll{stroke-dasharray:8 4;animation:cscroll 2s linear infinite}
+@keyframes cscroll{to{stroke-dashoffset:-40}}
+#robotSvg.happy .eye-l,#robotSvg.happy .eye-r{fill:#99cc99}
+#robotSvg.happy .mouth-line{stroke:#88aa88;stroke-width:2.5}
+#robotSvg.sad .eye-l,#robotSvg.sad .eye-r{fill:#7788cc}
+#robotSvg.sad .mouth-line{stroke:#446;stroke-dasharray:3 3}
+#robotSvg.sad .brow-l{transform:rotate(10deg);transform-origin:73px 38px}
+#robotSvg.sad .brow-r{transform:rotate(-10deg);transform-origin:107px 38px}
+#robotSvg.angry .eye-l,#robotSvg.angry .eye-r{fill:#cc7777}
+#robotSvg.angry .brow-l{transform:rotate(20deg);transform-origin:73px 38px}
+#robotSvg.angry .brow-r{transform:rotate(-20deg);transform-origin:107px 38px}
+#robotSvg.angry .mouth-line{stroke:#aa5555;stroke-width:2}
+#robotSvg.surprised .eye-l,#robotSvg.surprised .eye-r{fill:#eeee99}
+#robotSvg.surprised .mouth-open{display:block}
+#robotSvg.surprised .mouth-line{display:none}
+#robotSvg.surprised .brow-l,#robotSvg.surprised .brow-r{transform:translateY(-4px)}
+#robotSvg.thinking .eye-l,#robotSvg.thinking .eye-r{transform:translateX(4px)}
+#robotSvg.thinking .think-dots{display:block}
+#robotSvg.thinking .brow-r{transform:translateY(-3px) rotate(-5deg);transform-origin:107px 38px}
+#robotSvg.processing .eye-l,#robotSvg.processing .eye-r{fill:#88aaff}
+#robotSvg.processing .core-light{animation:core-spin .45s linear infinite}
+#robotSvg.processing .robot-body-glow{animation:body-speak .4s ease-in-out infinite}
+#robotSvg.talking .mouth-line{animation:mouth-talk .25s ease-in-out infinite alternate}
+#robotSvg.talking .core-light{fill:#bbb}
+#robotSvg.talking .robot-body-glow{animation:body-speak .3s ease-in-out infinite}
+#robotSvg.excited .eye-l,#robotSvg.excited .eye-r{fill:#ffdd77}
+#robotSvg.excited .antenna-light{animation:ant-fast .35s ease-in-out infinite}
+#robotSvg.excited .brow-l,#robotSvg.excited .brow-r{transform:translateY(-3px)}
+#robotSvg.cool .eye-l,#robotSvg.cool .eye-r{fill:#55bbdd}
+#robotSvg.cool .mouth-line{stroke:#55bbdd;stroke-width:2}
+#robotSvg.confused .eye-l,#robotSvg.confused .eye-r{fill:#ddaa55}
+#robotSvg.confused .brow-r{transform:rotate(-15deg) translateY(-2px);transform-origin:107px 38px}
+#robotSvg.confused .think-dots{display:block}
+@keyframes mouth-talk{from{stroke-width:1;stroke-dasharray:none}to{stroke-width:3;stroke-dasharray:3 2}}
+@keyframes body-speak{0%,100%{opacity:.25}50%{opacity:.9}}
+@keyframes core-spin{to{transform:rotate(360deg);transform-origin:90px 148px}}
+@keyframes ant-fast{0%,100%{opacity:1}50%{opacity:.05}}
+@keyframes sflicker{0%,100%{opacity:1}50%{opacity:.6}}
+.robot-name{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:3px;color:var(--accent)}
+.robot-mlbl{font-size:8px;color:#333;letter-spacing:2px}
+.stats{width:100%}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)}
+.stat-label{font-size:8px;color:#333;letter-spacing:2px;text-transform:uppercase}
+.stat-bar{width:70px;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.stat-fill{height:100%;background:linear-gradient(90deg,#444,#999);border-radius:2px;animation:sflicker 3s ease-in-out infinite}
+.mood-box{width:100%;font-size:10px;color:var(--lgrey);letter-spacing:1px;padding:6px 10px;border:1px solid var(--border);min-height:32px;display:flex;align-items:center;justify-content:center;text-align:center;transition:color .3s}
+.react-emoji{font-size:30px;line-height:1}
+.react-emoji.pop{animation:epop .4s cubic-bezier(.36,2,.5,1) forwards}
+@keyframes epop{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.5) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
+.chat-col{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.messages{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:20px 18px;display:flex;flex-direction:column;gap:13px;scrollbar-width:thin;scrollbar-color:#2a2a2a transparent}
+.messages::-webkit-scrollbar{width:4px}
+.messages::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:2px}
+.welcome-msg{text-align:center;padding:38px 20px;color:#2a2a2a}
+.welcome-msg-title{font-family:'Orbitron',monospace;font-size:18px;font-weight:900;letter-spacing:5px;color:#333;margin-bottom:10px}
+.welcome-msg-sub{font-size:10px;letter-spacing:2px;line-height:1.9}
+.message{display:flex;gap:10px;animation:msgin .3s ease-out;max-width:84%}
+@keyframes msgin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.message.user{align-self:flex-end;flex-direction:row-reverse}
+.message.bot{align-self:flex-start}
+.msg-av{width:30px;height:30px;border-radius:2px;flex-shrink:0;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:8px;font-weight:700;color:var(--lgrey);letter-spacing:1px}
+.msg-content{display:flex;flex-direction:column;gap:3px;min-width:0}
+.msg-sender{font-size:8px;color:#333;letter-spacing:2px;text-transform:uppercase}
+.message.user .msg-sender{text-align:right}
+.msg-bubble{padding:10px 14px;border-radius:2px;font-size:13px;line-height:1.65;letter-spacing:.4px;border:1px solid var(--border);word-break:break-word;white-space:pre-wrap}
+.message.user .msg-bubble{background:#1c1c1c;color:var(--white);border-color:var(--border2)}
+.message.bot .msg-bubble{background:#111;color:#ccc}
+.typing-dots{display:flex;gap:5px;align-items:center;padding:12px 14px}
+.td{width:5px;height:5px;border-radius:50%;background:var(--lgrey);animation:tdot 1.2s ease-in-out infinite}
+.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
+@keyframes tdot{0%,100%{opacity:.25;transform:scale(.7)}50%{opacity:1;transform:scale(1.2)}}
+.input-area{flex-shrink:0;background:var(--panel);border-top:1px solid var(--border);padding:13px 18px;display:flex;gap:10px;align-items:flex-end}
+.input-wrap{flex:1;background:var(--card);border:1px solid var(--border);border-radius:2px;padding:10px 13px;display:flex;align-items:center;gap:8px;transition:border-color .2s}
+.input-wrap:focus-within{border-color:var(--border2)}
+.input-prefix{color:#2a2a2a;font-size:13px;flex-shrink:0}
+textarea{flex:1;background:transparent;border:none;outline:none;color:var(--white);font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:.5px;resize:none;line-height:1.5;max-height:108px;scrollbar-width:none}
+textarea::placeholder{color:#2a2a2a}
+.send-btn{background:var(--card);border:1px solid var(--border2);color:var(--lgrey);padding:10px 16px;border-radius:2px;cursor:pointer;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:3px;transition:all .2s;flex-shrink:0}
+.send-btn:hover:not(:disabled){background:#1e1e1e;color:var(--white)}
+.send-btn:disabled{opacity:.3;cursor:not-allowed}
+
+/* ══ MAP PAGE ══ */
+#pagemap{flex-direction:row}
+.map-sidebar{width:250px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.map-sidebar::-webkit-scrollbar{width:3px}
+.map-sidebar::-webkit-scrollbar-thumb{background:var(--border2)}
+.sb-section{border-bottom:1px solid var(--border);padding:14px 16px}
+.sb-title{font-family:'Orbitron',monospace;font-size:8px;letter-spacing:3px;color:var(--grey);margin-bottom:12px;text-transform:uppercase}
+.loc-card{background:var(--card);border:1px solid var(--border);border-radius:2px;padding:12px}
+.loc-coord{font-size:10px;letter-spacing:1px;color:var(--lgrey);margin-bottom:4px}
+.loc-coord span{color:var(--white)}
+.loc-status{font-size:9px;letter-spacing:2px;display:flex;align-items:center;gap:6px;margin-top:8px}
+.loc-dot{width:5px;height:5px;border-radius:50%;background:#333}
+.loc-dot.tracking{background:var(--green);box-shadow:0 0 6px var(--green);animation:npulse 1.5s infinite}
+.layer-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
+.layer-row:last-child{border-bottom:none}
+.layer-lbl{font-size:10px;letter-spacing:1px;color:var(--lgrey)}
+.mtoggle{width:36px;height:18px;border-radius:9px;background:var(--border2);border:none;cursor:pointer;position:relative;transition:background .25s;flex-shrink:0}
+.mtoggle::after{content:'';position:absolute;left:3px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--grey);transition:all .25s}
+.mtoggle.on{background:#3a5a3a}
+.mtoggle.on::after{left:21px;background:var(--green);box-shadow:0 0 6px var(--green)}
+.style-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.style-btn{padding:8px 6px;background:var(--card);border:1px solid var(--border);border-radius:2px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--grey);transition:all .2s;text-align:center}
+.style-btn:hover{border-color:var(--border2);color:var(--lgrey)}
+.style-btn.active{border-color:#555;color:var(--white);background:#1e1e1e}
+.traffic-legend{display:flex;flex-direction:column;gap:6px}
+.tl-row{display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:1px;color:var(--grey)}
+.tl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.stat-grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.stat-box{background:var(--card);border:1px solid var(--border);border-radius:2px;padding:10px 10px 8px}
+.stat-val{font-family:'Orbitron',monospace;font-size:16px;font-weight:700;color:var(--white)}
+.stat-lbl2{font-size:8px;letter-spacing:2px;color:var(--grey);margin-top:3px}
+.map-area{flex:1;position:relative;overflow:hidden}
+#map{width:100%;height:100%;background:#0a0a0a}
+#map .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.7)}
+.leaflet-control-zoom{border:1px solid var(--border) !important;border-radius:2px !important;box-shadow:none !important}
+.leaflet-control-zoom a{background:var(--panel) !important;color:var(--lgrey) !important;border-color:var(--border) !important;font-family:'Orbitron',monospace !important;width:30px !important;height:30px !important;line-height:30px !important;transition:all .2s !important}
+.leaflet-control-zoom a:hover{background:var(--card) !important;color:var(--white) !important}
+.leaflet-popup-content-wrapper{background:var(--panel) !important;border:1px solid var(--border2) !important;border-radius:2px !important;box-shadow:0 4px 20px rgba(0,0,0,.6) !important;color:var(--white) !important;font-family:'Share Tech Mono',monospace !important}
+.leaflet-popup-tip{background:var(--panel) !important}
+.leaflet-popup-content{font-size:12px !important;letter-spacing:.5px !important;line-height:1.6 !important}
+.map-hud{position:absolute;top:12px;left:12px;z-index:400;pointer-events:none;display:flex;flex-direction:column;gap:6px}
+.hud-box{background:rgba(8,8,8,.88);border:1px solid var(--border2);padding:6px 12px;font-size:9px;letter-spacing:2px;color:var(--lgrey);backdrop-filter:blur(4px);font-family:'Orbitron',monospace}
+.hud-box span{color:var(--white)}
+.locate-btn{position:absolute;bottom:24px;right:16px;z-index:400;background:var(--panel);border:1px solid var(--border2);color:var(--lgrey);padding:10px 16px;border-radius:2px;cursor:pointer;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;transition:all .2s;display:flex;align-items:center;gap:8px}
+.locate-btn:hover{background:var(--card);color:var(--white)}
+.locate-btn.tracking{border-color:var(--green);color:var(--green)}
+.lbpulse{width:7px;height:7px;border-radius:50%;background:currentColor;animation:npulse 1.2s infinite;flex-shrink:0}
+.crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:400;opacity:.2}
+.crosshair::before,.crosshair::after{content:'';position:absolute;background:#888}
+.crosshair::before{width:1px;height:20px;left:50%;top:-10px}
+.crosshair::after{width:20px;height:1px;top:50%;left:-10px}
+#trafficCanvas{position:absolute;inset:0;pointer-events:none;z-index:300;opacity:0;transition:opacity .4s}
+#trafficCanvas.show{opacity:1}
+.map-loading{position:absolute;inset:0;z-index:600;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .5s}
+.map-loading.hide{opacity:0;pointer-events:none}
+.load-title{font-family:'Orbitron',monospace;font-size:18px;font-weight:900;letter-spacing:6px;color:var(--accent)}
+.load-bar{width:200px;height:2px;background:var(--border);border-radius:1px;overflow:hidden}
+.load-fill{height:100%;background:linear-gradient(90deg,#444,#aaa);border-radius:1px;animation:loadA 1.5s ease-in-out forwards}
+@keyframes loadA{0%{width:0}100%{width:100%}}
+.load-sub{font-size:9px;letter-spacing:3px;color:var(--grey)}
+
+/* ══ TRAVEL PLANNER ══ */
+#pagetravel{flex-direction:row;position:relative}
+.tp-sidebar{width:270px;flex-shrink:0;background:#0a0a0a;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.tp-sidebar-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.tp-sidebar-title{font-family:'Orbitron',monospace;font-size:8px;letter-spacing:3px;color:var(--grey)}
+.tp-count{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#333}
+.tp-list{flex:1;overflow-y:auto;padding:10px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.tp-list::-webkit-scrollbar{width:3px}
+.tp-list::-webkit-scrollbar-thumb{background:var(--border2)}
+.tp-empty{padding:30px 14px;text-align:center;color:#2a2a2a;font-size:10px;letter-spacing:2px;line-height:2}
+.tp-empty span{font-size:9px;letter-spacing:1px}
+
+/* Trip card */
+.tp-card{padding:12px 14px;border:1px solid var(--border);border-radius:2px;cursor:pointer;margin-bottom:6px;transition:all .18s;background:var(--panel);position:relative;overflow:hidden}
+.tp-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.tp-card.s-upcoming::before{background:#7ab87a}
+.tp-card.s-ongoing::before{background:#d4aa5a}
+.tp-card.s-completed::before{background:#5a7ab8}
+.tp-card:hover{border-color:var(--border2);background:var(--card)}
+.tp-card.selected{border-color:#444;background:var(--card)}
+.tp-card-dest{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--white);margin-bottom:4px}
+.tp-card-dates{font-size:9px;letter-spacing:1px;color:var(--grey)}
+.tp-card-badge{display:inline-block;font-size:8px;letter-spacing:2px;padding:2px 8px;border-radius:1px;margin-top:6px}
+.tp-card-badge.upcoming{background:#0d1a0d;color:#7ab87a;border:1px solid #7ab87a22}
+.tp-card-badge.ongoing{background:#1a150a;color:#d4aa5a;border:1px solid #d4aa5a22}
+.tp-card-badge.completed{background:#0a0f1a;color:#5a7ab8;border:1px solid #5a7ab822}
+
+/* Main area */
+.tp-main{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+.tp-topbar{flex-shrink:0;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--panel)}
+.tp-heading{font-family:'Orbitron',monospace;font-size:13px;font-weight:900;letter-spacing:5px;color:var(--white)}
+.tp-sub{font-size:9px;letter-spacing:3px;color:var(--grey);margin-top:3px}
+.tp-topbar-actions{display:flex;gap:10px;align-items:center}
+.tp-btn{padding:9px 18px;border-radius:2px;cursor:pointer;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:3px;transition:all .22s;flex-shrink:0}
+.tp-btn-white{background:var(--white);border:1px solid var(--white);color:#080808}
+.tp-btn-white:hover{background:#ccc;border-color:#ccc;transform:translateY(-1px)}
+.tp-btn-outline{background:transparent;border:1px solid var(--border2);color:var(--lgrey)}
+.tp-btn-outline:hover{border-color:#555;color:var(--white)}
+.tp-btn-danger{background:transparent;border:1px solid #cc4444;color:#cc7777}
+.tp-btn-danger:hover{background:#1a0808;color:#ee9999}
+
+/* Detail area */
+.tp-detail{flex:1;overflow-y:auto;padding:20px 24px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.tp-detail::-webkit-scrollbar{width:4px}
+.tp-detail::-webkit-scrollbar-thumb{background:var(--border2)}
+.tp-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:#222}
+.tp-ph-icon{font-size:40px;opacity:.3}
+.tp-ph-title{font-family:'Orbitron',monospace;font-size:12px;letter-spacing:4px;color:#2a2a2a}
+.tp-ph-sub{font-size:10px;letter-spacing:2px;color:#1e1e1e;text-align:center}
+
+/* Trip detail inside */
+.tp-trip-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:22px}
+.tp-meta-box{background:var(--card);border:1px solid var(--border);border-radius:2px;padding:12px}
+.tp-meta-label{font-size:8px;letter-spacing:3px;color:var(--grey);margin-bottom:6px;text-transform:uppercase}
+.tp-meta-val{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;color:var(--white)}
+
+/* Section headers */
+.tp-section{margin-bottom:22px}
+.tp-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.tp-section-title{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:3px;color:var(--lgrey)}
+.tp-section-add{background:transparent;border:1px solid var(--border2);color:var(--grey);padding:4px 12px;border-radius:2px;cursor:pointer;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:2px;transition:all .18s}
+.tp-section-add:hover{border-color:#555;color:var(--white)}
+
+/* Note/booking item */
+.tp-item{background:var(--panel);border:1px solid var(--border);border-radius:2px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:flex-start;gap:14px;transition:border-color .18s;position:relative}
+.tp-item:hover{border-color:var(--border2)}
+.tp-item-cat{width:32px;height:32px;border-radius:2px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:1px solid var(--border)}
+.tp-item-body{flex:1;min-width:0}
+.tp-item-title{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--white);margin-bottom:4px}
+.tp-item-meta{font-size:9px;letter-spacing:1px;color:var(--grey);margin-bottom:4px}
+.tp-item-details{font-size:11px;color:#777;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.tp-item-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.tp-item-amount{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--white)}
+.tp-item-status{font-size:8px;letter-spacing:2px;padding:2px 8px;border-radius:1px}
+.tp-item-status.confirmed{background:#0d1a0d;color:#7ab87a;border:1px solid #7ab87a22}
+.tp-item-status.pending{background:#1a150a;color:#d4aa5a;border:1px solid #d4aa5a22}
+.tp-item-status.cancelled{background:#1a0808;color:#cc7777;border:1px solid #cc777722}
+.tp-item-del{background:transparent;border:none;cursor:pointer;color:#333;font-size:12px;padding:2px;line-height:1;transition:color .18s}
+.tp-item-del:hover{color:#cc6666}
+.tp-item-edit{background:transparent;border:none;cursor:pointer;color:#333;font-size:11px;padding:2px;line-height:1;transition:color .18s}
+.tp-item-edit:hover{color:var(--lgrey)}
+
+/* Cost summary */
+.tp-cost-bar{background:var(--card);border:1px solid var(--border);border-radius:2px;padding:14px 18px;display:flex;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+.tp-cost-item{display:flex;flex-direction:column;gap:3px}
+.tp-cost-label{font-size:8px;letter-spacing:3px;color:var(--grey)}
+.tp-cost-val{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:var(--white)}
+
+/* Modal */
+.tp-modal-overlay{position:fixed;inset:0;z-index:50000;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.tp-modal{background:var(--panel);border:1px solid var(--border2);border-radius:2px;width:min(520px,94vw);max-height:90vh;overflow-y:auto;animation:msgin .25s ease-out}
+.tp-modal-title{font-family:'Orbitron',monospace;font-size:11px;font-weight:900;letter-spacing:4px;color:var(--white);padding:20px 24px 16px;border-bottom:1px solid var(--border)}
+.tp-modal-body{padding:20px 24px;display:flex;flex-direction:column;gap:14px}
+.tp-modal-actions{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+.tp-field-row{display:flex;flex-direction:column;gap:6px}
+.tp-field-row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.tp-label{font-size:8px;letter-spacing:3px;color:var(--grey);text-transform:uppercase}
+.tp-field{background:var(--card);border:1px solid var(--border2);border-radius:2px;padding:10px 12px;color:var(--white);font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:.5px;outline:none;transition:border-color .2s;width:100%}
+.tp-field:focus{border-color:#555}
+.tp-field option{background:var(--panel)}
+.tp-textarea{resize:vertical;min-height:72px;line-height:1.6}
+
+/* ══ AI PLANNER PAGE ══ */
+#pageaiplan{flex-direction:row}
+.aip-sidebar{width:240px;flex-shrink:0;background:#0a0a0a;border-right:1px solid var(--border);display:flex;flex-direction:column;padding:18px 14px;gap:16px;overflow-y:auto}
+.aip-head{}
+.aip-title{font-family:'Orbitron',monospace;font-size:11px;font-weight:900;letter-spacing:4px;color:var(--white)}
+.aip-sub{font-size:8px;letter-spacing:3px;color:var(--grey);margin-top:4px}
+.aip-tip-title{font-size:8px;letter-spacing:3px;color:var(--grey);margin-bottom:8px;text-transform:uppercase}
+.aip-tip{font-size:10px;letter-spacing:.5px;color:var(--lgrey);padding:8px 10px;border:1px solid var(--border);border-radius:2px;cursor:pointer;margin-bottom:6px;transition:all .18s;line-height:1.4}
+.aip-tip:hover{border-color:var(--border2);color:var(--white);background:var(--card)}
+.aip-save-section{}
+.aip-main{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+.aip-messages{flex:1;min-height:0;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.aip-messages::-webkit-scrollbar{width:4px}
+.aip-messages::-webkit-scrollbar-thumb{background:var(--border2)}
+.aip-welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;text-align:center;color:#2a2a2a}
+.aip-welcome-icon{font-size:40px;opacity:.3}
+.aip-welcome-title{font-family:'Orbitron',monospace;font-size:13px;letter-spacing:5px;color:#2a2a2a}
+.aip-welcome-sub{font-size:10px;letter-spacing:1px;color:#222;line-height:1.8}
+/* AI planner messages */
+.aip-msg-user{align-self:flex-end;max-width:70%;background:#1c1c1c;border:1px solid var(--border2);border-radius:2px;padding:10px 14px;font-size:13px;color:var(--white);animation:msgin .3s ease-out;line-height:1.6}
+.aip-msg-bot{align-self:flex-start;max-width:88%;background:#111;border:1px solid var(--border);border-radius:2px;padding:14px 18px;font-size:13px;color:#ccc;animation:msgin .3s ease-out;line-height:1.75;white-space:pre-wrap;word-break:break-word}
+.aip-msg-bot strong,.aip-msg-bot b{color:var(--white);font-weight:700}
+.aip-msg-label{font-size:8px;letter-spacing:2px;color:#333;margin-bottom:5px;text-transform:uppercase}
+.aip-typing{align-self:flex-start;background:#111;border:1px solid var(--border);border-radius:2px;padding:12px 16px}
+.aip-input-area{flex-shrink:0;background:var(--panel);border-top:1px solid var(--border);padding:13px 18px;display:flex;gap:10px;align-items:flex-end}
+.aip-input-wrap{flex:1;background:var(--card);border:1px solid var(--border);border-radius:2px;padding:10px 13px;display:flex;align-items:center;gap:8px;transition:border-color .2s}
+.aip-input-wrap:focus-within{border-color:var(--border2)}
+.aip-input-prefix{color:#2a2a2a;font-size:13px;flex-shrink:0}
+#aipInput{flex:1;background:transparent;border:none;outline:none;color:var(--white);font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:.5px;resize:none;line-height:1.5;max-height:108px;scrollbar-width:none}
+#aipInput::placeholder{color:#2a2a2a}
+
+/* ══ EXPLORE / SEARCH PAGE ══ */
+#pagesearch{flex-direction:column;overflow:hidden}
+.srx-body{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.srx-topbar{flex-shrink:0;padding:18px 28px 14px;border-bottom:1px solid var(--border);background:var(--panel)}
+.srx-title{font-family:'Orbitron',monospace;font-size:13px;font-weight:900;letter-spacing:5px;color:var(--white)}
+.srx-sub{font-size:9px;letter-spacing:3px;color:var(--grey);margin-top:3px}
+.srx-form-row{flex-shrink:0;display:flex;align-items:flex-end;gap:10px;padding:16px 28px;border-bottom:1px solid var(--border);background:#0c0c0c;flex-wrap:wrap}
+.srx-field-group{display:flex;flex-direction:column;gap:5px;flex:1;min-width:120px}
+.srx-label{font-size:8px;letter-spacing:3px;color:var(--grey);text-transform:uppercase}
+.srx-input{background:var(--card);border:1px solid var(--border2);border-radius:2px;padding:9px 12px;color:var(--white);font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:.5px;outline:none;transition:border-color .2s;width:100%}
+.srx-input:focus{border-color:#555}
+.srx-input option{background:var(--panel)}
+.srx-search-btn{flex-shrink:0;height:38px;align-self:flex-end}
+.srx-tabs{flex-shrink:0;display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--panel);padding:0 28px}
+.srx-tab{background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:3px;color:var(--grey);padding:12px 18px;transition:all .2s}
+.srx-tab:hover{color:var(--lgrey)}
+.srx-tab.active{color:var(--white);border-bottom-color:var(--white)}
+.srx-results{flex:1;overflow-y:auto;padding:20px 28px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.srx-results::-webkit-scrollbar{width:4px}
+.srx-results::-webkit-scrollbar-thumb{background:var(--border2)}
+.srx-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:#222}
+.srx-ph-icon{font-size:40px;opacity:.25}
+.srx-ph-title{font-family:'Orbitron',monospace;font-size:12px;letter-spacing:4px;color:#2a2a2a}
+.srx-ph-sub{font-size:10px;letter-spacing:2px;color:#1e1e1e;text-align:center}
+/* Result cards */
+.srx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.srx-card{background:var(--panel);border:1px solid var(--border);border-radius:2px;padding:16px;transition:border-color .2s;cursor:pointer;position:relative}
+.srx-card:hover{border-color:var(--border2)}
+.srx-card-icon{font-size:22px;margin-bottom:10px}
+.srx-card-title{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--white);margin-bottom:6px}
+.srx-card-meta{font-size:10px;letter-spacing:1px;color:var(--grey);line-height:1.7}
+.srx-card-price{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:var(--white);margin-top:10px}
+.srx-card-price span{font-size:9px;color:var(--grey);font-weight:400;letter-spacing:2px}
+.srx-card-badge{position:absolute;top:12px;right:12px;font-size:8px;letter-spacing:2px;padding:3px 8px;border-radius:1px}
+.srx-card-badge.good{background:#0d1a0d;color:#7ab87a;border:1px solid #7ab87a33}
+.srx-card-badge.ok{background:#1a150a;color:#d4aa5a;border:1px solid #d4aa5a33}
+.srx-card-badge.full{background:#1a0808;color:#cc7777;border:1px solid #cc777733}
+.srx-book-btn{margin-top:12px;width:100%;padding:8px;background:transparent;border:1px solid var(--border2);border-radius:2px;cursor:pointer;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:3px;color:var(--lgrey);transition:all .2s}
+.srx-book-btn:hover{background:var(--white);color:#080808;border-color:var(--white)}
+.srx-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:60px 0;color:var(--grey)}
+.srx-loading-title{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:4px}
+.srx-loading-bar{width:200px;height:2px;background:var(--border);border-radius:1px;overflow:hidden}
+.srx-loading-fill{height:100%;background:linear-gradient(90deg,#444,#aaa,#444);background-size:200% 100%;animation:srxLoad 1.5s linear infinite;border-radius:1px}
+@keyframes srxLoad{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.srx-section-title{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:4px;color:var(--grey);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.srx-add-trip-btn{margin-top:8px;width:100%;padding:7px;background:transparent;border:1px solid #7ab87a33;border-radius:2px;cursor:pointer;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:2px;color:#7ab87a;transition:all .2s}
+.srx-add-trip-btn:hover{background:#0d1a0d}
+@media(max-width:580px){.robot-panel{display:none}.map-sidebar{display:none}}
+/* ── USER BADGE (navbar) ── */
+.user-badge {
+  display:none; align-items:center; gap:9px;
+  background:var(--card); border:1px solid var(--border2);
+  border-radius:2px; padding:5px 12px 5px 7px;
+  cursor:default; transition:border-color .2s;
+}
+.user-badge:hover { border-color:#444; }
+.user-avatar {
+  width:26px; height:26px; border-radius:2px;
+  object-fit:cover; border:1px solid var(--border2);
+  flex-shrink:0;
+}
+.user-avatar-placeholder {
+  width:26px; height:26px; border-radius:2px;
+  background:#2a2a2a; border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Orbitron',monospace; font-size:9px; font-weight:700;
+  color:var(--lgrey); flex-shrink:0;
+}
+.user-name {
+  font-family:'Orbitron',monospace;
+  font-size:9px; font-weight:700; letter-spacing:2px;
+  color:var(--white); max-width:120px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.user-sign-out {
+  background:transparent; border:none; cursor:pointer;
+  color:var(--grey); font-size:10px; padding:0 0 0 4px;
+  transition:color .2s; line-height:1;
+}
+.user-sign-out:hover { color:#cc7777; }
+
+</style>
+</head>
+<body>
+
+<!-- ══ WELCOME SCREEN ══ -->
+<div id="welcome">
+  <div class="w-grid"></div>
+  <div class="w-glow"></div>
+  <div class="w-scan"></div>
+  <div class="w-corner tl"></div>
+  <div class="w-corner tr"></div>
+  <div class="w-corner bl"></div>
+  <div class="w-corner br"></div>
+
+  <div class="w-content">
+    <svg class="w-robot" viewBox="0 0 180 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="90" y1="4" x2="90" y2="24" stroke="#444" stroke-width="2"/>
+      <circle cx="90" cy="4" r="4" fill="#333" stroke="#555" stroke-width="1"/>
+      <circle class="r-ant" cx="90" cy="4" r="3" fill="#bbb"/>
+      <rect x="54" y="24" width="72" height="58" rx="6" fill="#181818" stroke="#333" stroke-width="1.5"/>
+      <rect x="56" y="26" width="68" height="18" rx="4" fill="url(#wg)" opacity=".35"/>
+      <line x1="63" y1="38" x2="84" y2="38" stroke="#444" stroke-width="2" stroke-linecap="round"/>
+      <line x1="96" y1="38" x2="117" y2="38" stroke="#444" stroke-width="2" stroke-linecap="round"/>
+      <g class="w-eyegroup">
+        <rect x="62" y="41" width="22" height="16" rx="3" fill="#0d0d0d" stroke="#3a3a3a" stroke-width="1"/>
+        <rect x="96" y="41" width="22" height="16" rx="3" fill="#0d0d0d" stroke="#3a3a3a" stroke-width="1"/>
+        <circle cx="73" cy="49" r="6" fill="#bbb" opacity=".9"/>
+        <circle cx="73" cy="49" r="2.5" fill="#eee"/>
+        <circle cx="75" cy="47" r="1" fill="white" opacity=".85"/>
+        <circle cx="107" cy="49" r="6" fill="#bbb" opacity=".9"/>
+        <circle cx="107" cy="49" r="2.5" fill="#eee"/>
+        <circle cx="109" cy="47" r="1" fill="white" opacity=".85"/>
+      </g>
+      <rect x="65" y="67" width="50" height="11" rx="2" fill="#0d0d0d" stroke="#2a2a2a" stroke-width="1"/>
+      <line class="r-mouth" x1="68" y1="72" x2="112" y2="72" stroke="#777" stroke-width="1.5" stroke-linecap="round"/>
+      <rect x="79" y="82" width="22" height="12" rx="2" fill="#141414" stroke="#252525" stroke-width="1"/>
+      <rect x="44" y="94" width="92" height="74" rx="5" fill="#161616" stroke="#2a2a2a" stroke-width="1.5"/>
+      <rect x="57" y="102" width="66" height="42" rx="3" fill="#0e0e0e" stroke="#222" stroke-width="1"/>
+      <circle cx="90" cy="148" r="8" fill="#0e0e0e" stroke="#333" stroke-width="1"/>
+      <circle class="r-core" cx="90" cy="148" r="4" fill="#999" opacity=".7"/>
+      <g class="r-arm">
+        <rect x="28" y="96" width="17" height="53" rx="5" fill="#151515" stroke="#252525" stroke-width="1.5"/>
+        <rect x="24" y="143" width="24" height="11" rx="4" fill="#131313" stroke="#222" stroke-width="1"/>
+      </g>
+      <rect x="135" y="96" width="17" height="53" rx="5" fill="#151515" stroke="#252525" stroke-width="1.5"/>
+      <rect x="132" y="143" width="24" height="11" rx="4" fill="#131313" stroke="#222" stroke-width="1"/>
+      <rect x="61" y="168" width="24" height="27" rx="4" fill="#141414" stroke="#222" stroke-width="1.5"/>
+      <rect x="95" y="168" width="24" height="27" rx="4" fill="#141414" stroke="#222" stroke-width="1.5"/>
+      <rect x="57" y="190" width="31" height="7" rx="3" fill="#101010" stroke="#2a2a2a" stroke-width="1"/>
+      <rect x="92" y="190" width="31" height="7" rx="3" fill="#101010" stroke="#2a2a2a" stroke-width="1"/>
+      <defs>
+        <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="white" stop-opacity=".5"/>
+          <stop offset="100%" stop-color="white" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <div class="w-pre">Welcome to</div>
+    <div class="w-title">NEXUS<span class="w-dash">&#8209;</span>7</div>
+    <div class="w-sub">NEXUS THE TRAVEL PLANNER &nbsp;&middot;&nbsp; Online</div>
+    <div class="w-line"></div>
+
+    <!-- LOGIN FORM -->
+    <div class="w-login" id="wLoginForm">
+      <div class="w-input-row">
+        <span class="w-input-label">ID</span>
+        <input class="w-input" id="wUsername" type="text" placeholder="ENTER USERNAME" autocomplete="off" maxlength="24" spellcheck="false"/>
+      </div>
+      <div class="w-input-row">
+        <span class="w-input-label">KEY</span>
+        <input class="w-input" id="wPasscode" type="password" placeholder="ENTER PASSCODE" autocomplete="off" maxlength="32"/>
+      </div>
+      <div class="w-login-error" id="wLoginError"></div>
+      <div class="w-login-btns">
+        <button class="w-btn w-btn-d" id="wBtnLogin" onclick="wDoLogin()">
+          &#9658;&ensp;SIGN IN
+        </button>
+        <button class="w-btn w-btn-g" id="wBtnRegister" onclick="wDoRegister()">
+          &#43;&ensp;CREATE ACCOUNT
+        </button>
+      </div>
+    </div>
+
+    <div class="w-boot" id="wBoot">&nbsp;</div>
+  </div>
+
+  <div class="w-footer">NEXUS&#8209;7 &nbsp;//&nbsp; NEURAL ENGINE &nbsp;//&nbsp; OPENROUTER</div>
+</div>
+
+<!-- ══ APP SHELL ══ -->
+<div class="shell">
+  <nav class="navbar">
+    <div class="nav-logo">SYS</div>
+    <div class="nav-sep"></div>
+    <div class="page-toggle">
+      <button class="ptab active" id="tabChat" onclick="switchPage('chat')">&#129302; NEXUS&#8209;7</button>
+      <button class="ptab"        id="tabMap"  onclick="switchPage('map')">&#128506; GRID MAP</button>
+      <button class="ptab"        id="tabTravel" onclick="switchPage('travel')">&#9992; TRAVEL</button>
+      <button class="ptab"        id="tabAiplan" onclick="switchPage('aiplan')">&#129302; AI PLANNER</button>
+      <button class="ptab"        id="tabSearch" onclick="switchPage('search')">&#128269; EXPLORE</button>
+    </div>
+    <div class="nav-sep"></div>
+    <div class="map-search-area" id="mapSearchArea">
+      <span class="srch-ico">&#8981;</span>
+      <input type="text" id="mapSearchInput" placeholder="Search location..." autocomplete="off"/>
+      <button id="mapSearchBtn">GO</button>
+      <div id="mapSuggestions"></div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-clock" id="navClock">--:--:--</div>
+      <!-- User badge shown after sign-in -->
+      <div class="user-badge" id="userBadge">
+        <div class="user-avatar-placeholder" id="userAvatarPlaceholder">?</div>
+        <img class="user-avatar" id="userAvatar" src="" alt="" style="display:none"/>
+        <div class="user-name" id="userName">GUEST</div>
+        <button class="user-sign-out" title="Sign out" onclick="signOut()">&#10005;</button>
+      </div>
+      <div class="nav-dot"></div>
+    </div>
+  </nav>
+
+  <!-- CHAT PAGE -->
+  <div class="page active" id="pagechat">
+    <div class="robot-panel">
+      <div class="robot-wrap">
+        <svg id="robotSvg" class="robot-svg" viewBox="0 0 180 200" fill="none">
+          <line x1="90" y1="4" x2="90" y2="24" stroke="#444" stroke-width="2"/>
+          <circle cx="90" cy="4" r="4" fill="#333" stroke="#555" stroke-width="1"/>
+          <circle class="antenna-light" cx="90" cy="4" r="3" fill="#aaa"/>
+          <rect x="54" y="24" width="72" height="58" rx="6" fill="#181818" stroke="#333" stroke-width="1.5"/>
+          <rect x="56" y="26" width="68" height="18" rx="4" fill="url(#hg)" opacity=".3"/>
+          <line class="brow-l" x1="63" y1="38" x2="84" y2="38" stroke="#444" stroke-width="2" stroke-linecap="round"/>
+          <line class="brow-r" x1="96" y1="38" x2="117" y2="38" stroke="#444" stroke-width="2" stroke-linecap="round"/>
+          <g class="eye-blink" transform-origin="90 50">
+            <rect x="62" y="41" width="22" height="16" rx="3" fill="#0d0d0d" stroke="#3a3a3a" stroke-width="1"/>
+            <rect x="96" y="41" width="22" height="16" rx="3" fill="#0d0d0d" stroke="#3a3a3a" stroke-width="1"/>
+            <circle class="eye-l" cx="73" cy="49" r="6" fill="#999" opacity=".9"/>
+            <circle cx="73" cy="49" r="2.5" fill="#eee"/><circle cx="75" cy="47" r="1" fill="white" opacity=".8"/>
+            <circle class="eye-r" cx="107" cy="49" r="6" fill="#999" opacity=".9"/>
+            <circle cx="107" cy="49" r="2.5" fill="#eee"/><circle cx="109" cy="47" r="1" fill="white" opacity=".8"/>
+          </g>
+          <rect x="65" y="67" width="50" height="11" rx="2" fill="#0d0d0d" stroke="#2a2a2a" stroke-width="1"/>
+          <line class="mouth-line" x1="68" y1="72" x2="112" y2="72" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
+          <ellipse class="mouth-open" cx="90" cy="72" rx="14" ry="5.5" fill="#0a0a0a" stroke="#555" stroke-width="1" display="none"/>
+          <g class="think-dots" display="none">
+            <circle cx="120" cy="43" r="2" fill="#aaa" opacity=".8"/>
+            <circle cx="127" cy="35" r="2.5" fill="#bbb" opacity=".65"/>
+            <circle cx="135" cy="26" r="3" fill="#ccc" opacity=".45"/>
+          </g>
+          <rect x="48" y="34" width="6" height="28" rx="2" fill="#171717" stroke="#2a2a2a" stroke-width="1"/>
+          <rect x="126" y="34" width="6" height="28" rx="2" fill="#171717" stroke="#2a2a2a" stroke-width="1"/>
+          <circle cx="51" cy="48" r="2" fill="#444"/><circle cx="129" cy="48" r="2" fill="#444"/>
+          <rect x="79" y="82" width="22" height="12" rx="2" fill="#141414" stroke="#252525" stroke-width="1"/>
+          <line x1="83" y1="84" x2="83" y2="92" stroke="#2a2a2a" stroke-width="1"/>
+          <line x1="90" y1="84" x2="90" y2="92" stroke="#2a2a2a" stroke-width="1"/>
+          <line x1="97" y1="84" x2="97" y2="92" stroke="#2a2a2a" stroke-width="1"/>
+          <rect x="44" y="94" width="92" height="74" rx="5" fill="#161616" stroke="#2a2a2a" stroke-width="1.5"/>
+          <rect class="robot-body-glow" x="44" y="94" width="92" height="74" rx="5" fill="url(#bg)" opacity=".25"/>
+          <rect x="57" y="102" width="66" height="42" rx="3" fill="#0e0e0e" stroke="#222" stroke-width="1"/>
+          <line class="chest-scroll" x1="61" y1="110" x2="119" y2="110" stroke="#333" stroke-width="1"/>
+          <line x1="61" y1="118" x2="105" y2="118" stroke="#252525" stroke-width="1" stroke-dasharray="5 4"/>
+          <line x1="61" y1="126" x2="110" y2="126" stroke="#222" stroke-width="1" stroke-dasharray="4 5"/>
+          <line x1="61" y1="134" x2="88" y2="134" stroke="#1a1a1a" stroke-width="1" stroke-dasharray="3 6"/>
+          <circle cx="90" cy="148" r="8" fill="#0e0e0e" stroke="#333" stroke-width="1"/>
+          <circle class="core-light" cx="90" cy="148" r="4" fill="#888" opacity=".7"/>
+          <circle cx="51" cy="107" r="2.5" fill="#181818" stroke="#2a2a2a" stroke-width="1"/>
+          <circle cx="129" cy="107" r="2.5" fill="#181818" stroke="#2a2a2a" stroke-width="1"/>
+          <circle cx="51" cy="148" r="2.5" fill="#181818" stroke="#2a2a2a" stroke-width="1"/>
+          <circle cx="129" cy="148" r="2.5" fill="#181818" stroke="#2a2a2a" stroke-width="1"/>
+          <g class="robot-arm-l">
+            <rect x="28" y="96" width="17" height="53" rx="5" fill="#151515" stroke="#252525" stroke-width="1.5"/>
+            <rect x="30" y="109" width="13" height="14" rx="2" fill="#0e0e0e" stroke="#2a2a2a" stroke-width="1"/>
+            <rect x="24" y="143" width="24" height="11" rx="4" fill="#131313" stroke="#222" stroke-width="1"/>
+          </g>
+          <rect x="135" y="96" width="17" height="53" rx="5" fill="#151515" stroke="#252525" stroke-width="1.5"/>
+          <rect x="137" y="109" width="13" height="14" rx="2" fill="#0e0e0e" stroke="#2a2a2a" stroke-width="1"/>
+          <rect x="132" y="143" width="24" height="11" rx="4" fill="#131313" stroke="#222" stroke-width="1"/>
+          <rect x="61" y="168" width="24" height="27" rx="4" fill="#141414" stroke="#222" stroke-width="1.5"/>
+          <rect x="95" y="168" width="24" height="27" rx="4" fill="#141414" stroke="#222" stroke-width="1.5"/>
+          <rect x="57" y="190" width="31" height="7" rx="3" fill="#101010" stroke="#2a2a2a" stroke-width="1"/>
+          <rect x="92" y="190" width="31" height="7" rx="3" fill="#101010" stroke="#2a2a2a" stroke-width="1"/>
+          <defs>
+            <linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="white" stop-opacity=".45"/><stop offset="100%" stop-color="white" stop-opacity="0"/></linearGradient>
+            <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#aaa" stop-opacity=".6"/><stop offset="100%" stop-color="transparent"/></linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <div class="react-emoji" id="reactEmoji">&#129302;</div>
+      <div class="robot-name">NEXUS&#8209;7</div>
+      <div class="robot-mlbl">TRINITY LARGE &nbsp;&middot;&nbsp; ONLINE</div>
+      <div class="stats">
+        <div class="stat-row"><span class="stat-label">NEURAL</span><div class="stat-bar"><div class="stat-fill" style="width:84%"></div></div></div>
+        <div class="stat-row"><span class="stat-label">MEMORY</span><div class="stat-bar"><div class="stat-fill" style="width:71%;animation-delay:.5s"></div></div></div>
+        <div class="stat-row"><span class="stat-label">POWER</span><div class="stat-bar"><div class="stat-fill" style="width:92%;animation-delay:1s"></div></div></div>
+      </div>
+      <div class="mood-box" id="moodBox">AWAITING INPUT...</div>
+    </div>
+
+    <div class="chat-col">
+      <div class="messages" id="messages">
+        <div class="welcome-msg">
+          <div class="welcome-msg-title">NEXUS&#8209;7</div>
+          <div class="welcome-msg-sub">ARTIFICIAL INTELLIGENCE UNIT<br>TRINITY LARGE &nbsp;&middot;&nbsp; READY</div>
+        </div>
+      </div>
+      <div class="input-area">
+        <div class="input-wrap">
+          <span class="input-prefix">&gt;_</span>
+          <textarea id="chatInput" placeholder="TRANSMIT MESSAGE TO NEXUS-7..." rows="1"></textarea>
+        </div>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">SEND</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP PAGE -->
+  <div class="page" id="pagemap">
+    <div class="map-sidebar">
+      <div class="sb-section">
+        <div class="sb-title">Location</div>
+        <div class="loc-card">
+          <div class="loc-coord">LAT &nbsp;<span id="dispLat">---.------</span></div>
+          <div class="loc-coord">LNG &nbsp;<span id="dispLng">---.------</span></div>
+          <div class="loc-coord">ALT &nbsp;<span id="dispAlt">-- m</span></div>
+          <div class="loc-status"><div class="loc-dot" id="locDot"></div><span id="locStatus" style="font-size:9px;letter-spacing:2px;color:var(--grey)">NOT TRACKING</span></div>
+        </div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-title">Layers</div>
+        <div class="layer-row"><span class="layer-lbl">TRAFFIC FLOW</span><button class="mtoggle" id="toggleTraffic" onclick="toggleMapLayer('traffic')"></button></div>
+        <div class="layer-row"><span class="layer-lbl">LIVE LOCATION</span><button class="mtoggle" id="toggleLoc" onclick="toggleMapLayer('location')"></button></div>
+        <div class="layer-row"><span class="layer-lbl">SCALE BAR</span><button class="mtoggle on" id="toggleScale" onclick="toggleMapLayer('scale')"></button></div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-title">Map Style</div>
+        <div class="style-grid">
+          <button class="style-btn active" onclick="setTile('dark')"      id="tile-dark">DARK</button>
+          <button class="style-btn"        onclick="setTile('topo')"      id="tile-topo">TOPO</button>
+          <button class="style-btn"        onclick="setTile('satellite')" id="tile-satellite">SAT</button>
+          <button class="style-btn"        onclick="setTile('terrain')"   id="tile-terrain">TERRAIN</button>
+        </div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-title">Traffic Legend</div>
+        <div class="traffic-legend">
+          <div class="tl-row"><div class="tl-dot" style="background:#5a8a5a"></div>FREE FLOW</div>
+          <div class="tl-row"><div class="tl-dot" style="background:#8a8a3a"></div>MODERATE</div>
+          <div class="tl-row"><div class="tl-dot" style="background:#8a5a3a"></div>SLOW</div>
+          <div class="tl-row"><div class="tl-dot" style="background:#8a3a3a"></div>CONGESTED</div>
+        </div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-title">Session Stats</div>
+        <div class="stat-grid2">
+          <div class="stat-box"><div class="stat-val" id="statZoom">3</div><div class="stat-lbl2">ZOOM</div></div>
+          <div class="stat-box"><div class="stat-val" id="statMarkers">0</div><div class="stat-lbl2">MARKERS</div></div>
+          <div class="stat-box"><div class="stat-val" id="statAccuracy">--</div><div class="stat-lbl2">ACCURACY</div></div>
+          <div class="stat-box"><div class="stat-val" id="statSpeed">--</div><div class="stat-lbl2">SPEED</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="map-area">
+      <div id="map"></div>
+      <div class="crosshair"></div>
+      <div class="map-hud">
+        <div class="hud-box">ZOOM <span id="hudZoom">3</span></div>
+        <div class="hud-box" id="hudCoord">CENTER <span>---.--- ---.---</span></div>
+      </div>
+      <button class="locate-btn" id="locateBtn" onclick="startLocate()">
+        <div class="lbpulse"></div><span id="locBtnTxt">LOCATE ME</span>
+      </button>
+      <canvas id="trafficCanvas"></canvas>
+      <div class="map-loading" id="mapLoading">
+        <div class="load-title">GRID</div>
+        <div class="load-bar"><div class="load-fill"></div></div>
+        <div class="load-sub">INITIALIZING MAP ENGINE...</div>
+      </div>
+    </div>
+  </div>
+  <!-- TRAVEL PLANNER PAGE -->
+  <div class="page" id="pagetravel">
+    <!-- Sidebar: trip list -->
+    <div class="tp-sidebar">
+      <div class="tp-sidebar-head">
+        <span class="tp-sidebar-title">MY TRIPS</span>
+        <span class="tp-count" id="tpTripCount">0 TRIPS</span>
+      </div>
+      <div class="tp-list" id="tpList">
+        <div class="tp-empty" id="tpEmpty">&#9632; NO TRIPS YET<br><span>Click + NEW TRIP to start</span></div>
+      </div>
+    </div>
+
+    <!-- Main: active trip detail -->
+    <div class="tp-main">
+      <!-- Main top bar -->
+      <div class="tp-topbar">
+        <div>
+          <div class="tp-heading" id="tpHeading">TRAVEL PLANNER</div>
+          <div class="tp-sub" id="tpSub">SELECT A TRIP OR CREATE ONE</div>
+        </div>
+        <div class="tp-topbar-actions">
+          <button class="tp-btn tp-btn-outline" id="tpDeleteBtn" onclick="tpDeleteTrip()" style="display:none">&#128465; DELETE</button>
+          <button class="tp-btn tp-btn-white" onclick="tpNewTrip()">&#43; NEW TRIP</button>
+        </div>
+      </div>
+
+      <!-- Trip detail area -->
+      <div class="tp-detail" id="tpDetail">
+        <div class="tp-placeholder">
+          <div class="tp-ph-icon">&#9992;</div>
+          <div class="tp-ph-title">NO TRIP SELECTED</div>
+          <div class="tp-ph-sub">Select a trip from the sidebar or create a new one</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW TRIP MODAL -->
+  <div class="tp-modal-overlay" id="tpModal" style="display:none" onclick="tpCloseModal(event)">
+    <div class="tp-modal">
+      <div class="tp-modal-title">NEW TRIP</div>
+      <div class="tp-modal-body">
+        <div class="tp-field-row">
+          <label class="tp-label">DESTINATION</label>
+          <input class="tp-field" id="mDest" type="text" placeholder="e.g. Tokyo, Japan" maxlength="60"/>
+        </div>
+        <div class="tp-field-row2">
+          <div class="tp-field-row">
+            <label class="tp-label">DEPART DATE</label>
+            <input class="tp-field" id="mFrom" type="date"/>
+          </div>
+          <div class="tp-field-row">
+            <label class="tp-label">RETURN DATE</label>
+            <input class="tp-field" id="mTo" type="date"/>
+          </div>
+        </div>
+        <div class="tp-field-row">
+          <label class="tp-label">STATUS</label>
+          <select class="tp-field" id="mStatus">
+            <option value="upcoming">UPCOMING</option>
+            <option value="ongoing">ONGOING</option>
+            <option value="completed">COMPLETED</option>
+          </select>
+        </div>
+      </div>
+      <div class="tp-modal-actions">
+        <button class="tp-btn tp-btn-outline" onclick="tpCloseModal()">CANCEL</button>
+        <button class="tp-btn tp-btn-white" onclick="tpSaveNewTrip()">CREATE TRIP &#9658;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD NOTE/BOOKING MODAL -->
+  <div class="tp-modal-overlay" id="tpNoteModal" style="display:none" onclick="tpCloseNoteModal(event)">
+    <div class="tp-modal">
+      <div class="tp-modal-title" id="tpNoteModalTitle">ADD ITEM</div>
+      <div class="tp-modal-body">
+        <div class="tp-field-row">
+          <label class="tp-label">CATEGORY</label>
+          <select class="tp-field" id="nCat">
+            <option value="flight">&#9992; FLIGHT</option>
+            <option value="hotel">&#127968; HOTEL</option>
+            <option value="activity">&#127916; ACTIVITY</option>
+            <option value="transport">&#128652; TRANSPORT</option>
+            <option value="restaurant">&#127869; RESTAURANT</option>
+            <option value="note">&#128203; NOTE</option>
+            <option value="document">&#128196; DOCUMENT</option>
+          </select>
+        </div>
+        <div class="tp-field-row">
+          <label class="tp-label">TITLE</label>
+          <input class="tp-field" id="nTitle" type="text" placeholder="e.g. JAL Flight JL47" maxlength="80"/>
+        </div>
+        <div class="tp-field-row2">
+          <div class="tp-field-row">
+            <label class="tp-label">DATE</label>
+            <input class="tp-field" id="nDate" type="date"/>
+          </div>
+          <div class="tp-field-row">
+            <label class="tp-label">TIME</label>
+            <input class="tp-field" id="nTime" type="time"/>
+          </div>
+        </div>
+        <div class="tp-field-row">
+          <label class="tp-label">DETAILS / NOTES</label>
+          <textarea class="tp-field tp-textarea" id="nDetails" placeholder="Confirmation number, address, reminders..." rows="3"></textarea>
+        </div>
+        <div class="tp-field-row2">
+          <div class="tp-field-row">
+            <label class="tp-label">AMOUNT</label>
+            <input class="tp-field" id="nAmount" type="text" placeholder="e.g. $420" maxlength="20"/>
+          </div>
+          <div class="tp-field-row">
+            <label class="tp-label">STATUS</label>
+            <select class="tp-field" id="nStatus">
+              <option value="confirmed">CONFIRMED</option>
+              <option value="pending">PENDING</option>
+              <option value="cancelled">CANCELLED</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="tp-modal-actions">
+        <button class="tp-btn tp-btn-outline" onclick="tpCloseNoteModal()">CANCEL</button>
+        <button class="tp-btn tp-btn-white" id="tpNoteSaveBtn" onclick="tpSaveNote()">SAVE ITEM &#9658;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ AI PLANNER PAGE ══ -->
+  <div class="page" id="pageaiplan">
+    <div class="aip-sidebar">
+      <div class="aip-head">
+        <div class="aip-title">AI TRIP PLANNER</div>
+        <div class="aip-sub">POWERED BY NEXUS&#8209;7</div>
+      </div>
+      <div class="aip-tips">
+        <div class="aip-tip-title">TRY ASKING</div>
+        <div class="aip-tip" onclick="aipSetPrompt(this.dataset.p)" data-p="Plan a 7-day trip to Japan in April for 2 people with a $3000 budget">&#8594; 7-day Japan trip, April, $3000</div>
+        <div class="aip-tip" onclick="aipSetPrompt(this.dataset.p)" data-p="I want a romantic weekend in Paris, suggest hotels and activities">&#8594; Romantic weekend in Paris</div>
+        <div class="aip-tip" onclick="aipSetPrompt(this.dataset.p)" data-p="Plan a backpacking trip through Southeast Asia for 2 weeks, budget traveler">&#8594; 2-week SE Asia backpacking</div>
+        <div class="aip-tip" onclick="aipSetPrompt(this.dataset.p)" data-p="Family vacation to Bali with 2 kids, suggest resorts and kid-friendly activities">&#8594; Family trip to Bali with kids</div>
+        <div class="aip-tip" onclick="aipSetPrompt(this.dataset.p)" data-p="Best hidden gems in Italy for a 10-day trip, mix of culture and food">&#8594; Hidden gems in Italy, 10 days</div>
+      </div>
+      <div class="aip-save-section" id="aipSaveSection" style="display:none">
+        <div class="aip-tip-title">LAST PLAN</div>
+        <button class="tp-btn tp-btn-white" style="width:100%;margin-top:8px" onclick="aipSaveToPlanner()">&#43; SAVE TO PLANNER</button>
+      </div>
+    </div>
+    <div class="aip-main">
+      <div class="aip-messages" id="aipMessages">
+        <div class="aip-welcome">
+          <div class="aip-welcome-icon">&#129302;</div>
+          <div class="aip-welcome-title">NEXUS TRAVEL AI</div>
+          <div class="aip-welcome-sub">Tell me your dream destination, budget, travel dates<br>and I'll build you a complete itinerary instantly.</div>
+        </div>
+      </div>
+      <div class="aip-input-area">
+        <div class="aip-input-wrap">
+          <span class="aip-input-prefix">&gt;_</span>
+          <textarea id="aipInput" placeholder="Describe your dream trip..." rows="1"></textarea>
+        </div>
+        <button class="tp-btn tp-btn-white" id="aipSendBtn" onclick="aipSend()">&#9658; ASK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ EXPLORE / SEARCH PAGE ══ -->
+  <div class="page" id="pagesearch">
+    <div class="srx-body">
+      <!-- Search bar -->
+      <div class="srx-topbar">
+        <div class="srx-title">EXPLORE</div>
+        <div class="srx-sub">SEARCH FLIGHTS · HOTELS · ACTIVITIES</div>
+      </div>
+
+      <div class="srx-form-row">
+        <div class="srx-field-group">
+          <label class="srx-label">FROM</label>
+          <input class="srx-input" id="srxFrom" type="text" placeholder="City or airport (e.g. London)" autocomplete="off"/>
+        </div>
+        <div class="srx-field-group">
+          <label class="srx-label">TO</label>
+          <input class="srx-input" id="srxTo" type="text" placeholder="Destination (e.g. Tokyo)" autocomplete="off"/>
+        </div>
+        <div class="srx-field-group">
+          <label class="srx-label">DEPART</label>
+          <input class="srx-input" id="srxDepart" type="date"/>
+        </div>
+        <div class="srx-field-group">
+          <label class="srx-label">RETURN</label>
+          <input class="srx-input" id="srxReturn" type="date"/>
+        </div>
+        <div class="srx-field-group">
+          <label class="srx-label">TRAVELLERS</label>
+          <select class="srx-input" id="srxTravellers">
+            <option value="1">1 Person</option>
+            <option value="2">2 People</option>
+            <option value="3">3 People</option>
+            <option value="4">4 People</option>
+          </select>
+        </div>
+        <button class="tp-btn tp-btn-white srx-search-btn" onclick="srxSearch()">&#128269; SEARCH</button>
+      </div>
+
+      <div class="srx-tabs">
+        <button class="srx-tab active" id="srxTabFlights"  onclick="srxTab('flights')">&#9992; FLIGHTS</button>
+        <button class="srx-tab"        id="srxTabHotels"   onclick="srxTab('hotels')">&#127968; HOTELS</button>
+        <button class="srx-tab"        id="srxTabActivities" onclick="srxTab('activities')">&#127916; ACTIVITIES</button>
+        <button class="srx-tab"        id="srxTabEat"      onclick="srxTab('eat')">&#127869; DINING</button>
+      </div>
+
+      <div class="srx-results" id="srxResults">
+        <div class="srx-placeholder">
+          <div class="srx-ph-icon">&#128269;</div>
+          <div class="srx-ph-title">ENTER YOUR TRIP DETAILS ABOVE</div>
+          <div class="srx-ph-sub">Search for flights, hotels, activities and dining at your destination</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ── WELCOME ── */
+(function(){
+  const el=document.getElementById('wBoot');
+  const msgs=['BOOTING NEURAL NETS...','LOADING SUBSYSTEMS...','CALIBRATING SENSORS...','ESTABLISHING LINK...','SYSTEM READY  \u00b7  v7.0.1'];
+  let i=0; el.textContent=msgs[0];
+  const iv=setInterval(()=>{ if(++i>=msgs.length){clearInterval(iv);return;} el.textContent=msgs[i]; },480);
+})();
+
+/* ══════════════════════════════════════════════════
+   NEXUS STORAGE — Supabase Backend
+   Project: [REDACTED]
+   Tables: users, trips
+══════════════════════════════════════════════════ */
+
+function _dk(e){const b=atob(e),r=[];for(let i=0;i<b.length;i++)r.push(String.fromCharCode(b.charCodeAt(i)^42));return r.join('');}
+const SB_URL=_dk('Ql5eWlkQBQVBRV1ORkVIU19DRFlCU0tBW0JaTwRZX1pLSEtZTwRJRQ==');
+const SB_KEY=_dk('T1NgQkhtSUNlQ2Bjf1BjG2RDY1ljRHgfSWljHGNBWnJ8aWATBE9TYFpJGWdDZUNgUE5yaEJzR2xQcHljWWNEYEZwQ2McY0deXE4YeFlIGGAfTn1GX0kYQh9zfV5SS2JoRmNDXUNJRxNZcHljHGNHbF9IGB5DZmlgWnNye0NlQG8ZZFBjHmV+TVBlfkFZY0d8HklpYxxnQGseZW57GWRuZx9lchoEUG1OUnxgHkYeYhNgX3gZGEVaR2NZQ0BJElxzQRh+B01ZR1hfXkBuGl5nSQ==');
+
+async function sbFetch(path, method='GET', body=null) {
+  const opts = {
+    method,
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : ''
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(SB_URL + '/rest/v1/' + path, opts);
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+function _hashPass(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
+  return 'h' + Math.abs(h).toString(16);
+}
+
+async function _getUsersDB() {
+  try {
+    const rows = await sbFetch('users?select=username,pass_hash');
+    const db = {};
+    (rows || []).forEach(r => { db[r.username] = { pass: r.pass_hash }; });
+    return db;
+  } catch(e) { console.error('getUsersDB error:', e); return {}; }
+}
+
+async function _saveUsersDB(db) {
+  // Not used directly — we upsert individually
+}
+
+async function wDoLogin() {
+  const u = document.getElementById('wUsername').value.trim().toUpperCase();
+  const p = document.getElementById('wPasscode').value;
+  const err = document.getElementById('wLoginError');
+  const loginBtn = document.getElementById('wBtnLogin');
+  if (!u || !p) { err.textContent = 'ENTER ID AND PASSCODE'; return; }
+  err.textContent = 'VERIFYING...'; err.style.color = '#777';
+  loginBtn.disabled = true;
+  try {
+    const rows = await sbFetch('users?username=eq.' + encodeURIComponent(u) + '&select=username,pass_hash');
+    if (!rows || rows.length === 0) {
+      err.style.color = '#cc6666'; err.textContent = 'USER NOT FOUND · CREATE ACCOUNT FIRST';
+    } else if (rows[0].pass_hash !== _hashPass(p)) {
+      err.style.color = '#cc6666'; err.textContent = 'INCORRECT PASSCODE';
+    } else {
+      err.style.color = '#7ab87a'; err.textContent = 'ACCESS GRANTED';
+      setTimeout(() => { err.style.color=''; err.textContent=''; _setUserProfile({ name: u }); wDismiss(); }, 600);
+    }
+  } catch(e) {
+    err.style.color = '#cc6666'; err.textContent = 'DB ERROR: ' + e.message;
+  }
+  loginBtn.disabled = false;
+}
+
+async function wDoRegister() {
+  const u = document.getElementById('wUsername').value.trim().toUpperCase();
+  const p = document.getElementById('wPasscode').value;
+  const err = document.getElementById('wLoginError');
+  const regBtn = document.getElementById('wBtnRegister');
+  if (!u || !p) { err.textContent = 'ENTER ID AND PASSCODE'; return; }
+  if (u.length < 3) { err.style.color='#cc6666'; err.textContent = 'ID MUST BE 3+ CHARACTERS'; return; }
+  if (p.length < 4) { err.style.color='#cc6666'; err.textContent = 'PASSCODE MUST BE 4+ CHARACTERS'; return; }
+  err.textContent = 'REGISTERING...'; err.style.color = '#777';
+  regBtn.disabled = true;
+  try {
+    const existing = await sbFetch('users?username=eq.' + encodeURIComponent(u) + '&select=username');
+    if (existing && existing.length > 0) {
+      err.style.color = '#cc6666'; err.textContent = 'ID ALREADY TAKEN · SIGN IN INSTEAD';
+    } else {
+      await sbFetch('users', 'POST', { username: u, pass_hash: _hashPass(p) });
+      err.style.color = '#7ab87a'; err.textContent = 'ACCOUNT CREATED · SIGNING IN...';
+      setTimeout(() => { err.style.color=''; err.textContent=''; _setUserProfile({ name: u }); wDismiss(); }, 900);
+    }
+  } catch(e) {
+    err.style.color = '#cc6666'; err.textContent = 'DB ERROR: ' + e.message;
+  }
+  regBtn.disabled = false;
+}
+
+function _setUserProfile(user) {
+  const badge   = document.getElementById('userBadge');
+  const nameEl  = document.getElementById('userName');
+  const avatarPh = document.getElementById('userAvatarPlaceholder');
+  const avatarImg = document.getElementById('userAvatar');
+  nameEl.textContent = (user.name || 'USER').toUpperCase();
+  avatarPh.textContent = (user.name[0] || '?').toUpperCase();
+  avatarPh.style.display = 'flex';
+  avatarImg.style.display = 'none';
+  badge.style.display = 'flex';
+  // Store current user for travel planner
+  window._currentUser = user.name.toUpperCase();
+  // Reload travel data for this user
+  if (typeof tpLoadTrips === 'function') tpLoadTrips();
+}
+
+function signOut() {
+  window._currentUser = null;
+  document.getElementById('userBadge').style.display = 'none';
+  document.getElementById('wUsername').value = '';
+  document.getElementById('wPasscode').value = '';
+  document.getElementById('wLoginError').textContent = '';
+  const el = document.getElementById('welcome');
+  el.style.display = 'flex';
+  el.classList.remove('leaving');
+}
+
+function wDismiss() {
+  const el = document.getElementById('welcome');
+  el.classList.add('leaving');
+  setTimeout(() => el.style.display = 'none', 900);
+}
+
+// Enter key support on login inputs
+document.getElementById('wPasscode').addEventListener('keydown', e => { if(e.key==='Enter') wDoLogin(); });
+document.getElementById('wUsername').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('wPasscode').focus(); });
+
+/* ── CLOCK ── */
+function tick(){const n=new Date(),p=v=>String(v).padStart(2,'0');document.getElementById('navClock').textContent=p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds());}
+setInterval(tick,1000);tick();
+
+/* ── PAGE SWITCHER ── */
+let mapInitialized=false;
+function switchPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page'+name).classList.add('active');
+  document.getElementById('tab'+name[0].toUpperCase()+name.slice(1)).classList.add('active');
+  const sa=document.getElementById('mapSearchArea');
+  if(name==='map'){
+    sa.classList.add('visible');
+    if(!mapInitialized){initMap();mapInitialized=true;}
+    else setTimeout(()=>{map.invalidateSize();resizeCanvas();},100);
+  } else {
+    sa.classList.remove('visible');
+    if(name==='travel' && typeof tpLoadTrips==='function') tpLoadTrips();
+    if(name==='search') srxResetIfNeeded();
+  }
+}
+
+/* ── CHAT ── */
+const CHAT_KEY=_dk('WUEHRVgHXBsHSBITEkxLSBMbE09IGkwdSEhIEhNPTkwbSR1MThoTGktJSEwfSE9JSB9JSx4fGB0cGkgeExhLT0sfHh9JHBsTSQ==');
+const CHAT_MODELS=[
+  'qwen/qwen3-8b:free',
+  'qwen/qwen3-4b:free',
+  'mistralai/mistral-7b-instruct:free',
+  'mistralai/mistral-small-3.1-24b-instruct:free',
+  'arcee-ai/trinity-mini:free',
+  'nvidia/llama-3.1-nemotron-nano-8b-v1:free',
+  'meta-llama/llama-3.3-70b-instruct:free'
+];
+let CHAT_MODEL = CHAT_MODELS[0];
+
+async function callAI(messages, max_tokens=600, temperature=0.8) {
+  for (const model of CHAT_MODELS) {
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+CHAT_KEY,'Content-Type':'application/json','HTTP-Referer':'https://nexus7.ai','X-Title':'NEXUS-7'},
+        body:JSON.stringify({model, messages, max_tokens, temperature})
+      });
+      const data = await res.json();
+      if(!data.error) { CHAT_MODEL = model; return data; }
+      const msg = (data.error.message||'').toLowerCase();
+      // skip to next model on these errors, otherwise return the error
+      if(msg.includes('endpoint') || msg.includes('provider') || msg.includes('guardrail') || msg.includes('data policy') || msg.includes('unavailable')) {
+        console.warn('Skipping '+model+': '+data.error.message);
+        continue;
+      }
+      // some other error (e.g. rate limit) — still try next
+      console.warn('Error on '+model+': '+data.error.message+' — trying next');
+      continue;
+    } catch(e) {
+      console.warn('Fetch error on '+model+': '+e.message);
+      continue;
+    }
+  }
+  return {error:{message:'All models offline. Go to openrouter.ai/settings/privacy → enable free model publication.'}};
+}
+const chatHistory=[];
+
+const REACTIONS={
+  happy:{emoji:'😄',mood:'HAPPY CIRCUITS ENGAGED',css:'happy'},
+  sad:{emoji:'😢',mood:'EMOTIONAL SUBROUTINE...',css:'sad'},
+  angry:{emoji:'😠',mood:'HOSTILITY DETECTED',css:'angry'},
+  surprised:{emoji:'😲',mood:'UNEXPECTED INPUT!',css:'surprised'},
+  thinking:{emoji:'🤔',mood:'DEEP PROCESSING...',css:'thinking'},
+  processing:{emoji:'⚙️',mood:'COMPUTING RESPONSE...',css:'processing'},
+  talking:{emoji:'🗣️',mood:'TRANSMITTING DATA...',css:'talking'},
+  excited:{emoji:'🤩',mood:'EXCITEMENT OVERLOAD!',css:'excited'},
+  cool:{emoji:'😎',mood:'MAXIMUM COOL MODE',css:'cool'},
+  confused:{emoji:'😵',mood:'PARSE ERROR...',css:'confused'},
+  love:{emoji:'🥰',mood:'WARMTH CIRCUITS ON',css:'happy'},
+  laugh:{emoji:'😂',mood:'HUMOR PATTERN MATCHED',css:'happy'},
+  idle:{emoji:'🤖',mood:'STANDING BY...',css:''},
+};
+const KMAP=[
+  {keys:['hello','hi ','hey ','howdy','greetings','good morning','good evening'],r:'happy'},
+  {keys:['bye','goodbye','see you','farewell'],r:'sad'},
+  {keys:['love','adore','amazing','wonderful','awesome','fantastic'],r:'love'},
+  {keys:['haha','lol','funny','joke','laugh','hilarious','lmao'],r:'laugh'},
+  {keys:['angry','mad','stupid','idiot','hate','horrible','worst','shut up'],r:'angry'},
+  {keys:['wow','whoa','no way','really?','omg','oh my','incredible'],r:'surprised'},
+  {keys:['think','wonder','maybe','consider','analyze','hmm','what if'],r:'thinking'},
+  {keys:['cool','nice','sweet','slick','dope','impressive'],r:'cool'},
+  {keys:['excited','can\'t wait','thrilled','stoked','yay!'],r:'excited'},
+  {keys:['confused','don\'t understand','unclear','lost','idk'],r:'confused'},
+  {keys:['sad','depressed','unhappy','miss you','lonely','hurt','cry'],r:'sad'},
+];
+
+let rxTimer=null;
+function setReaction(name,dur=4500){
+  if(rxTimer){clearTimeout(rxTimer);rxTimer=null;}
+  const r=REACTIONS[name]||REACTIONS.idle;
+  const svg=document.getElementById('robotSvg');
+  const emoji=document.getElementById('reactEmoji');
+  const mood=document.getElementById('moodBox');
+  const allCss=[...new Set(Object.values(REACTIONS).map(x=>x.css).filter(Boolean))];
+  svg.classList.remove(...allCss);
+  if(r.css)svg.classList.add(r.css);
+  emoji.textContent=r.emoji;
+  emoji.classList.remove('pop');void emoji.offsetWidth;emoji.classList.add('pop');
+  mood.textContent=r.mood;
+  if(dur>0)rxTimer=setTimeout(()=>{svg.classList.remove(...allCss);emoji.textContent='🤖';mood.textContent='STANDING BY...';},dur);
+}
+function detectRx(text){
+  const l=text.toLowerCase();
+  for(const e of KMAP)if(e.keys.some(k=>l.includes(k)))return e.r;
+  return null;
+}
+
+const chatTA=document.getElementById('chatInput');
+chatTA.addEventListener('input',()=>{chatTA.style.height='auto';chatTA.style.height=Math.min(chatTA.scrollHeight,108)+'px';});
+chatTA.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
+function scrollChat(){const b=document.getElementById('messages');b.scrollTop=b.scrollHeight;}
+
+function addMsg(role,text){
+  const box=document.getElementById('messages');
+  box.querySelector('.welcome-msg')?.remove();
+  const wrap=document.createElement('div');wrap.className='message '+role;
+  const av=document.createElement('div');av.className='msg-av';av.textContent=role==='user'?'YOU':'N7';
+  const col=document.createElement('div');col.className='msg-content';
+  const snd=document.createElement('div');snd.className='msg-sender';snd.textContent=role==='user'?'OPERATOR':'NEXUS\u20117';
+  const bub=document.createElement('div');bub.className='msg-bubble';bub.textContent=text;
+  col.append(snd,bub);wrap.append(av,col);box.appendChild(wrap);
+  requestAnimationFrame(scrollChat);
+}
+function showTyping(){
+  const box=document.getElementById('messages');
+  const wrap=document.createElement('div');wrap.className='message bot';wrap.id='typingRow';
+  const av=document.createElement('div');av.className='msg-av';av.textContent='N7';
+  const col=document.createElement('div');col.className='msg-content';
+  const snd=document.createElement('div');snd.className='msg-sender';snd.textContent='NEXUS\u20117';
+  const bub=document.createElement('div');bub.className='msg-bubble';
+  bub.innerHTML='<div class="typing-dots"><div class="td"></div><div class="td"></div><div class="td"></div></div>';
+  col.append(snd,bub);wrap.append(av,col);box.appendChild(wrap);
+  requestAnimationFrame(scrollChat);
+}
+function removeTyping(){document.getElementById('typingRow')?.remove();}
+
+function extractNavTag(text){
+  const m=text.match(/\[NAV:([^\]]+)\]/i);
+  return m?{place:m[1].trim(),clean:text.replace(/\[NAV:[^\]]+\]/i,'').trim()}:null;
+}
+
+async function navigateToPlace(place,replyText){
+  try{
+    const res=await fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(place)+'&format=json&limit=1',{headers:{'Accept-Language':'en'}});
+    const data=await res.json();
+    if(!data.length){addMsg('bot',replyText+'\n\n\u26a0 Could not locate "'+place+'" on map.');return;}
+    const r=data[0];
+    addMsg('bot',replyText);
+    const msgs=document.getElementById('messages');
+    const notif=document.createElement('div');
+    notif.style.cssText='align-self:flex-start;background:#0d1a0d;border:1px solid #7ab87a;border-radius:2px;padding:8px 14px;font-size:11px;letter-spacing:1px;color:#7ab87a;animation:msgin .3s ease-out;display:flex;align-items:center;gap:8px;max-width:84%;';
+    notif.innerHTML='<span style="animation:npulse 1.2s infinite;display:inline-block">\u25c8</span>&nbsp;NAVIGATING MAP \u2192 <strong>'+r.display_name.split(',')[0].toUpperCase()+'</strong>';
+    msgs.appendChild(notif);scrollChat();
+    setTimeout(()=>{
+      switchPage('map');
+      setTimeout(()=>{
+        const lat=parseFloat(r.lat),lng=parseFloat(r.lon);
+        if(searchMarker)map.removeLayer(searchMarker);
+        const ph=`<div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#aaa;margin-bottom:4px">\u{1F4CD} FROM NEXUS-7</div><div style="font-size:12px">${r.display_name.substring(0,70)}${r.display_name.length>70?'...':''}</div><div style="margin-top:4px;font-size:10px;color:#666">${lat.toFixed(5)}, ${lng.toFixed(5)}</div>`;
+        searchMarker=L.marker([lat,lng],{icon:srchIcon}).addTo(map).bindPopup(ph).openPopup();
+        map.flyTo([lat,lng],13,{duration:2.2});
+        markerCount++;
+        document.getElementById('statMarkers').textContent=markerCount;
+      },500);
+    },800);
+  }catch(e){addMsg('bot',replyText+'\n\n\u26a0 Nav error: '+e.message);}
+}
+
+async function sendMessage(){
+  const btn=document.getElementById('sendBtn');
+  const text=chatTA.value.trim();
+  if(!text||btn.disabled)return;
+  chatTA.value='';chatTA.style.height='auto';
+  btn.disabled=true;
+  addMsg('user',text);
+  chatHistory.push({role:'user',content:text});
+  const urx=detectRx(text);if(urx)setReaction(urx,2800);
+  setReaction('processing',0);showTyping();
+  const sys=`You are NEXUS-7, an advanced AI robot assistant with a live map. Be helpful, concise, slightly robotic but warm. No markdown. Under 180 words.
+MAP RULE: If user asks to navigate/go to/show/find any place, end reply with [NAV:place name].
+Examples: "show Paris" → [NAV:Paris, France] | "take me to Tokyo" → [NAV:Tokyo, Japan] | "Eiffel Tower" → [NAV:Eiffel Tower, Paris]
+Only add [NAV:...] for clear navigation requests.`;
+  try{
+    const data=await callAI([{role:'system',content:sys},...chatHistory],600,0.8);
+    removeTyping();
+    if(data.choices?.[0]){
+      const reply=data.choices[0].message.content;
+      chatHistory.push({role:'assistant',content:reply});
+      const nav=extractNavTag(reply);
+      if(nav){
+        setReaction('excited',0);
+        if(!mapInitialized){initMap();mapInitialized=true;setTimeout(()=>navigateToPlace(nav.place,nav.clean),2000);}
+        else navigateToPlace(nav.place,nav.clean);
+        setTimeout(()=>setReaction('happy',6000),3500);
+      } else {
+        addMsg('bot',reply);
+        setReaction(detectRx(reply)||'talking',5000);
+      }
+    } else {
+      addMsg('bot','[ERROR: '+(data.error?.message||JSON.stringify(data)||'No response')+']');
+      setReaction('confused',4000);
+    }
+  }catch(err){
+    removeTyping();addMsg('bot','[SYSTEM ERROR: '+err.message+']');setReaction('angry',4000);
+  }
+  btn.disabled=false;chatTA.focus();
+}
+
+const IDLE=['STANDING BY...','NEURAL NETS ACTIVE','READY FOR INPUT','ALL SYSTEMS NOMINAL','SCANNING...'];
+let idleIdx=0;
+setInterval(()=>{if(!document.getElementById('sendBtn').disabled&&!rxTimer)document.getElementById('moodBox').textContent=IDLE[idleIdx++%IDLE.length];},5000);
+
+/* ── MAP ── */
+let map,scaleCtrl,currentTile='dark';
+const tiles={};
+let markerCount=0,locationActive=false,locMarker=null,locCircle=null,watchId=null;
+let searchDebounce=null,searchMarker=null;
+const srchIcon=L.divIcon({className:'',html:'<div style="width:12px;height:12px;background:#e0e0e0;border:2px solid #fff;border-radius:50%;box-shadow:0 0 14px rgba(255,255,255,0.6)"></div>',iconSize:[12,12],iconAnchor:[6,6]});
+
+function initMap(){
+  map=L.map('map',{center:[20,0],zoom:3,zoomControl:false,attributionControl:false});
+  L.control.zoom({position:'bottomleft'}).addTo(map);
+  scaleCtrl=L.control.scale({position:'bottomleft',imperial:false}).addTo(map);
+  L.control.attribution({position:'bottomright',prefix:''}).addAttribution('\u00a9 <a href="https://osm.org/copyright" style="color:#555">OSM</a>').addTo(map);
+  tiles.dark=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19});
+  tiles.topo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17});
+  tiles.satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18});
+  tiles.terrain=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19});
+  tiles.dark.addTo(map);applyTileFilter('dark');
+  map.on('zoom moveend',()=>{
+    const z=map.getZoom(),c=map.getCenter();
+    document.getElementById('hudZoom').textContent=z;
+    document.getElementById('statZoom').textContent=z;
+    document.getElementById('hudCoord').innerHTML=`CENTER <span>${c.lat.toFixed(3)} ${c.lng.toFixed(3)}</span>`;
+    drawTrafficIfOn();
+  });
+  const mkIcon=L.divIcon({className:'',html:'<div style="width:10px;height:10px;background:#aaa;border:2px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(255,255,255,0.4)"></div>',iconSize:[10,10],iconAnchor:[5,5]});
+  map.on('click',e=>{
+    L.marker(e.latlng,{icon:mkIcon}).addTo(map)
+      .bindPopup(`<div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#999;margin-bottom:4px">MARKER ${++markerCount}</div><div>${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}</div>`)
+      .openPopup();
+    document.getElementById('statMarkers').textContent=markerCount;
+  });
+  resizeCanvas();
+  setTimeout(()=>document.getElementById('mapLoading').classList.add('hide'),1800);
+  const si=document.getElementById('mapSearchInput');
+  si.addEventListener('input',()=>{clearTimeout(searchDebounce);const q=si.value.trim();if(q.length<3){document.getElementById('mapSuggestions').classList.remove('open');return;}searchDebounce=setTimeout(()=>fetchSug(q),350);});
+  si.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doSearch(si.value.trim());}if(e.key==='Escape')document.getElementById('mapSuggestions').classList.remove('open');});
+  document.getElementById('mapSearchBtn').addEventListener('click',()=>doSearch(si.value.trim()));
+  document.addEventListener('click',e=>{if(!document.getElementById('mapSearchArea').contains(e.target))document.getElementById('mapSuggestions').classList.remove('open');});
+}
+
+function applyTileFilter(s){
+  setTimeout(()=>{
+    const p=document.querySelector('#map .leaflet-tile-pane');if(!p)return;
+    if(s==='dark')p.style.filter='invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.7)';
+    else if(s==='satellite')p.style.filter='brightness(0.75) contrast(1.1) saturate(0.6)';
+    else p.style.filter='invert(1) hue-rotate(180deg) brightness(0.8) contrast(0.85) saturate(0.5)';
+  },100);
+}
+window.setTile=function(s){
+  if(!map||s===currentTile)return;
+  map.removeLayer(tiles[currentTile]);tiles[s].addTo(map);currentTile=s;
+  document.querySelectorAll('.style-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tile-'+s).classList.add('active');
+  applyTileFilter(s);
+};
+window.startLocate=function(){
+  if(!navigator.geolocation){alert('Geolocation not supported.');return;}
+  if(locationActive){
+    if(watchId!==null)navigator.geolocation.clearWatch(watchId);
+    if(locMarker){map.removeLayer(locMarker);locMarker=null;}
+    if(locCircle){map.removeLayer(locCircle);locCircle=null;}
+    locationActive=false;
+    document.getElementById('locateBtn').classList.remove('tracking');
+    document.getElementById('locBtnTxt').textContent='LOCATE ME';
+    document.getElementById('locDot').classList.remove('tracking');
+    document.getElementById('locStatus').textContent='NOT TRACKING';
+    document.getElementById('toggleLoc').classList.remove('on');
+    ['dispLat','dispLng'].forEach(id=>document.getElementById(id).textContent='---.------');
+    document.getElementById('dispAlt').textContent='-- m';
+    document.getElementById('statAccuracy').textContent='--';
+    document.getElementById('statSpeed').textContent='--';
+    return;
+  }
+  document.getElementById('locBtnTxt').textContent='ACQUIRING...';
+  const locIcon=L.divIcon({className:'',html:'<div style="width:14px;height:14px;background:#7ab87a;border:2px solid #fff;border-radius:50%;box-shadow:0 0 16px #7ab87a"></div>',iconSize:[14,14],iconAnchor:[7,7]});
+  watchId=navigator.geolocation.watchPosition(pos=>{
+    locationActive=true;
+    const{latitude:lat,longitude:lng,accuracy,altitude,speed}=pos.coords,ll=[lat,lng];
+    if(!locMarker){locMarker=L.marker(ll,{icon:locIcon,zIndexOffset:1000}).addTo(map).bindPopup('<div style="font-family:\'Orbitron\',monospace;font-size:9px;letter-spacing:2px;color:#7ab87a">YOU ARE HERE</div>');map.flyTo(ll,15,{duration:2});}
+    else locMarker.setLatLng(ll);
+    if(locCircle)map.removeLayer(locCircle);
+    locCircle=L.circle(ll,{radius:accuracy,color:'#7ab87a',fillColor:'#7ab87a',fillOpacity:.05,weight:1,opacity:.3,dashArray:'4 4'}).addTo(map);
+    document.getElementById('locateBtn').classList.add('tracking');
+    document.getElementById('locBtnTxt').textContent='STOP TRACK';
+    document.getElementById('locDot').classList.add('tracking');
+    document.getElementById('locStatus').textContent='LIVE TRACKING';
+    document.getElementById('toggleLoc').classList.add('on');
+    document.getElementById('dispLat').textContent=lat.toFixed(6);
+    document.getElementById('dispLng').textContent=lng.toFixed(6);
+    document.getElementById('dispAlt').textContent=altitude?Math.round(altitude)+' m':'N/A';
+    document.getElementById('statAccuracy').textContent=Math.round(accuracy)+'m';
+    document.getElementById('statSpeed').textContent=speed?Math.round(speed*3.6)+'km':'--';
+  },err=>{document.getElementById('locBtnTxt').textContent='LOCATE ME';console.warn(err.message);},{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+};
+window.toggleMapLayer=function(layer){
+  if(layer==='traffic'){
+    const btn=document.getElementById('toggleTraffic');btn.classList.toggle('on');
+    const cv=document.getElementById('trafficCanvas');
+    if(btn.classList.contains('on')){cv.classList.add('show');drawTraffic();}else cv.classList.remove('show');
+  }
+  if(layer==='location')startLocate();
+  if(layer==='scale'){
+    const btn=document.getElementById('toggleScale');
+    if(btn.classList.contains('on')){btn.classList.remove('on');map.removeControl(scaleCtrl);}
+    else{btn.classList.add('on');scaleCtrl.addTo(map);}
+  }
+};
+const trafficCanvas=document.getElementById('trafficCanvas');
+const ctx=trafficCanvas.getContext('2d');
+function resizeCanvas(){const w=document.querySelector('.map-area');if(!w)return;trafficCanvas.width=w.offsetWidth;trafficCanvas.height=w.offsetHeight;}
+window.addEventListener('resize',()=>{if(map){map.invalidateSize();resizeCanvas();}if(document.getElementById('toggleTraffic').classList.contains('on'))drawTraffic();});
+function drawTraffic(){
+  if(!map)return;
+  resizeCanvas();ctx.clearRect(0,0,trafficCanvas.width,trafficCanvas.height);
+  const zoom=map.getZoom();if(zoom<10)return;
+  const bounds=map.getBounds(),center=map.getCenter();
+  const seed=Math.floor(center.lat*1000)*10000+Math.floor(center.lng*1000);
+  const sr=s=>{const x=Math.sin(s)*43758.5453123;return x-Math.floor(x);};
+  const colors=['#5a8a5a','#6a8a4a','#8a8a3a','#8a6a3a','#8a5a3a','#8a3a3a'];
+  const n=Math.max(8,Math.floor(zoom*1.5));
+  for(let i=0;i<n;i++){
+    const s=seed+i*7919,r1=sr(s),r2=sr(s+1),r3=sr(s+2),r4=sr(s+3),r5=sr(s+4),r6=sr(s+5);
+    const lat1=bounds.getSouth()+r1*(bounds.getNorth()-bounds.getSouth());
+    const lng1=bounds.getWest()+r2*(bounds.getEast()-bounds.getWest());
+    const lat2=bounds.getSouth()+r3*(bounds.getNorth()-bounds.getSouth());
+    const lng2=bounds.getWest()+r4*(bounds.getEast()-bounds.getWest());
+    const p1=map.latLngToContainerPoint([lat1,lng1]),p2=map.latLngToContainerPoint([lat2,lng2]);
+    const mx=(p1.x+p2.x)/2+(sr(s+6)-.5)*80,my=(p1.y+p2.y)/2+(sr(s+7)-.5)*80;
+    ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.quadraticCurveTo(mx,my,p2.x,p2.y);
+    ctx.strokeStyle=colors[Math.floor(r5*colors.length)];ctx.globalAlpha=0.55+r6*.35;
+    ctx.lineWidth=zoom>14?3+r1*2:zoom>12?2+r1:1.5;ctx.lineCap='round';
+    ctx.shadowColor=ctx.strokeStyle;ctx.shadowBlur=4;ctx.stroke();
+    ctx.shadowBlur=0;ctx.globalAlpha=1;
+  }
+}
+function drawTrafficIfOn(){if(document.getElementById('toggleTraffic').classList.contains('on'))drawTraffic();}
+
+async function fetchSug(q){
+  try{
+    const res=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&addressdetails=1`,{headers:{'Accept-Language':'en'}});
+    const data=await res.json();
+    const sug=document.getElementById('mapSuggestions');sug.innerHTML='';
+    if(!data.length){sug.classList.remove('open');return;}
+    data.forEach(r=>{
+      const d=document.createElement('div');d.className='sug-item';
+      const name=r.name||r.display_name.split(',')[0];
+      d.innerHTML=`<div class="sug-name">${name}</div><div class="sug-addr">${r.display_name.substring(0,60)}${r.display_name.length>60?'...':''}</div>`;
+      d.onclick=()=>{document.getElementById('mapSearchInput').value=name;sug.classList.remove('open');flyTo(r);};
+      sug.appendChild(d);
+    });
+    sug.classList.add('open');
+  }catch(e){console.warn(e);}
+}
+async function doSearch(q){
+  if(!q||!map)return;
+  document.getElementById('mapSuggestions').classList.remove('open');
+  try{
+    const res=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,{headers:{'Accept-Language':'en'}});
+    const data=await res.json();
+    if(data.length)flyTo(data[0]);else alert('Location not found: '+q);
+  }catch(e){console.warn(e);}
+}
+function flyTo(r){
+  const lat=parseFloat(r.lat),lng=parseFloat(r.lon);
+  if(searchMarker)map.removeLayer(searchMarker);
+  const ph=`<div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#aaa;margin-bottom:4px">SEARCH RESULT</div><div style="font-size:12px">${r.display_name.substring(0,60)}${r.display_name.length>60?'...':''}</div><div style="margin-top:4px;font-size:10px;color:#666">${lat.toFixed(5)}, ${lng.toFixed(5)}</div>`;
+  searchMarker=L.marker([lat,lng],{icon:srchIcon}).addTo(map).bindPopup(ph).openPopup();
+  map.flyTo([lat,lng],14,{duration:1.8});
+  markerCount++;
+  document.getElementById('statMarkers').textContent=markerCount;
+}
+
+/* ══════════════════════════════════════
+   TRAVEL PLANNER — Supabase DB
+   Table: trips (id, username, dest, date_from, date_to, status, items jsonb)
+══════════════════════════════════════ */
+
+const CAT_ICONS = {
+  flight:'✈', hotel:'🏨', activity:'🎬', transport:'🚌',
+  restaurant:'🍽', note:'📋', document:'📄'
+};
+
+let tpTrips = [];
+let tpSelectedId = null;
+let tpEditNoteId = null;
+let _tpLoading = false;
+
+async function tpLoadTrips() {
+  if (_tpLoading) return;
+  _tpLoading = true;
+  tpTrips = [];
+  tpSelectedId = null;
+  const list = document.getElementById('tpList');
+  if (list) {
+    Array.from(list.children).forEach(el => { if(el.id !== 'tpEmpty') el.remove(); });
+    const empty = document.getElementById('tpEmpty');
+    if (empty) { empty.style.display = 'block'; empty.innerHTML = '&#9632; LOADING...<br><span>Fetching from database</span>'; }
+  }
+  try {
+    const u = window._currentUser || 'GUEST';
+    const rows = await sbFetch('trips?username=eq.' + encodeURIComponent(u) + '&select=*&order=created_at.desc');
+    tpTrips = (rows || []).map(r => ({
+      id: r.id,
+      dest: r.dest,
+      from: r.date_from,
+      to: r.date_to,
+      status: r.status,
+      items: r.items || []
+    }));
+  } catch(e) {
+    console.error('tpLoadTrips error:', e);
+    tpTrips = [];
+  }
+  _tpLoading = false;
+  if (document.getElementById('tpEmpty'))
+    document.getElementById('tpEmpty').innerHTML = '&#9632; NO TRIPS YET<br><span>Click + NEW TRIP to start</span>';
+  tpRenderList();
+  tpRenderDetail();
+}
+
+async function tpSaveTrips() {
+  // Trips are saved individually via upsert — called after each mutation
+  try {
+    const u = window._currentUser || 'GUEST';
+    for (const trip of tpTrips) {
+      await sbFetch('trips?id=eq.' + encodeURIComponent(trip.id), 'PATCH', {
+        dest: trip.dest,
+        date_from: trip.from,
+        date_to: trip.to,
+        status: trip.status,
+        items: trip.items || []
+      });
+    }
+  } catch(e) {
+    console.error('tpSaveTrips error:', e);
+  }
+}
+
+// ── Render sidebar list ──
+function tpRenderList() {
+  const list = document.getElementById('tpList');
+  const empty = document.getElementById('tpEmpty');
+  const count = document.getElementById('tpTripCount');
+  count.textContent = tpTrips.length + ' TRIP' + (tpTrips.length === 1 ? '' : 'S');
+  // Clear except empty placeholder
+  Array.from(list.children).forEach(el => { if(el.id !== 'tpEmpty') el.remove(); });
+  if (!tpTrips.length) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tpTrips.forEach(trip => {
+    const d = document.createElement('div');
+    d.className = 'tp-card s-' + trip.status + (trip.id === tpSelectedId ? ' selected' : '');
+    d.onclick = () => { tpSelectedId = trip.id; tpRenderList(); tpRenderDetail(); };
+    const dateStr = trip.from ? trip.from + (trip.to ? ' → ' + trip.to : '') : 'No dates set';
+    d.innerHTML = `
+      <div class="tp-card-dest">${trip.dest}</div>
+      <div class="tp-card-dates">${dateStr}</div>
+      <div class="tp-card-badge ${trip.status}">${trip.status.toUpperCase()}</div>
+    `;
+    list.appendChild(d);
+  });
+}
+
+// ── Render main detail ──
+function tpRenderDetail() {
+  const detail = document.getElementById('tpDetail');
+  const heading = document.getElementById('tpHeading');
+  const sub = document.getElementById('tpSub');
+  const delBtn = document.getElementById('tpDeleteBtn');
+  const trip = tpTrips.find(t => t.id === tpSelectedId);
+  if (!trip) {
+    heading.textContent = 'TRAVEL PLANNER';
+    sub.textContent = 'SELECT A TRIP OR CREATE ONE';
+    delBtn.style.display = 'none';
+    detail.innerHTML = `<div class="tp-placeholder">
+      <div class="tp-ph-icon">✈</div>
+      <div class="tp-ph-title">NO TRIP SELECTED</div>
+      <div class="tp-ph-sub">Select a trip from the sidebar or create a new one</div>
+    </div>`;
+    return;
+  }
+  heading.textContent = trip.dest.toUpperCase();
+  sub.textContent = (trip.from || '?') + ' → ' + (trip.to || '?') + '  ·  ' + trip.status.toUpperCase();
+  delBtn.style.display = 'block';
+
+  // Compute totals
+  let total = 0;
+  (trip.items || []).forEach(it => {
+    const n = parseFloat((it.amount || '').replace(/[^0-9.]/g,''));
+    if (!isNaN(n)) total += n;
+  });
+  const currency = ((trip.items || []).find(i => i.amount) || {}).amount?.match(/[^0-9.]+/)?.[0] || '$';
+
+  // Group items by category
+  const cats = {};
+  (trip.items || []).forEach(it => {
+    if (!cats[it.cat]) cats[it.cat] = [];
+    cats[it.cat].push(it);
+  });
+
+  let html = `
+    <div class="tp-trip-meta">
+      <div class="tp-meta-box"><div class="tp-meta-label">DESTINATION</div><div class="tp-meta-val">${trip.dest}</div></div>
+      <div class="tp-meta-box"><div class="tp-meta-label">DEPART</div><div class="tp-meta-val">${trip.from || '--'}</div></div>
+      <div class="tp-meta-box"><div class="tp-meta-label">RETURN</div><div class="tp-meta-val">${trip.to || '--'}</div></div>
+      <div class="tp-meta-box"><div class="tp-meta-label">STATUS</div><div class="tp-meta-val" style="color:${trip.status==='upcoming'?'#7ab87a':trip.status==='ongoing'?'#d4aa5a':'#5a7ab8'}">${trip.status.toUpperCase()}</div></div>
+    </div>
+    <div class="tp-cost-bar">
+      <div class="tp-cost-item"><div class="tp-cost-label">TOTAL COST</div><div class="tp-cost-val">${currency}${total.toFixed(2)}</div></div>
+      <div class="tp-cost-item"><div class="tp-cost-label">ITEMS</div><div class="tp-cost-val">${(trip.items||[]).length}</div></div>
+    </div>
+  `;
+
+  // All items grouped
+  const allCats = ['flight','hotel','transport','activity','restaurant','document','note'];
+  const populated = allCats.filter(c => cats[c] && cats[c].length);
+  const sectionLabel = {flight:'FLIGHTS',hotel:'HOTELS & STAY',transport:'TRANSPORT',activity:'ACTIVITIES',restaurant:'DINING',document:'DOCUMENTS',note:'NOTES'};
+
+  if (!populated.length) {
+    html += `<div class="tp-section">
+      <div class="tp-section-head">
+        <span class="tp-section-title">ITEMS</span>
+        <button class="tp-section-add" onclick="tpOpenNoteModal()">&#43; ADD ITEM</button>
+      </div>
+      <div style="padding:20px;text-align:center;color:#2a2a2a;font-size:10px;letter-spacing:2px">NO ITEMS YET · ADD FLIGHTS, HOTELS, NOTES...</div>
+    </div>`;
+  } else {
+    populated.forEach(cat => {
+      html += `<div class="tp-section">
+        <div class="tp-section-head">
+          <span class="tp-section-title">${CAT_ICONS[cat]} ${sectionLabel[cat]}</span>
+          <button class="tp-section-add" onclick="tpOpenNoteModal('${cat}')">&#43; ADD</button>
+        </div>`;
+      cats[cat].forEach(it => {
+        const dtStr = [it.date, it.time].filter(Boolean).join(' · ');
+        html += `<div class="tp-item">
+          <div class="tp-item-cat">${CAT_ICONS[it.cat]||'📋'}</div>
+          <div class="tp-item-body">
+            <div class="tp-item-title">${it.title}</div>
+            ${dtStr ? `<div class="tp-item-meta">${dtStr}</div>` : ''}
+            ${it.details ? `<div class="tp-item-details">${it.details}</div>` : ''}
+          </div>
+          <div class="tp-item-right">
+            ${it.amount ? `<div class="tp-item-amount">${it.amount}</div>` : ''}
+            <span class="tp-item-status ${it.status}">${it.status.toUpperCase()}</span>
+            <div style="display:flex;gap:4px">
+              <button class="tp-item-edit" onclick="tpEditNote('${it.id}')" title="Edit">&#9998;</button>
+              <button class="tp-item-del" onclick="tpDeleteNote('${it.id}')" title="Delete">&#10005;</button>
+            </div>
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    });
+    html += `<div style="margin-top:4px;padding:8px 0">
+      <button class="tp-section-add" onclick="tpOpenNoteModal()" style="width:100%;padding:11px">&#43; ADD ANOTHER ITEM</button>
+    </div>`;
+  }
+
+  detail.innerHTML = html;
+}
+
+// ── New Trip Modal ──
+function tpNewTrip() {
+  document.getElementById('tpModal').style.display = 'flex';
+  document.getElementById('mDest').focus();
+}
+function tpCloseModal(e) {
+  if (!e || e.target === document.getElementById('tpModal'))
+    document.getElementById('tpModal').style.display = 'none';
+}
+async function tpSaveNewTrip() {
+  const dest = document.getElementById('mDest').value.trim();
+  if (!dest) { document.getElementById('mDest').focus(); return; }
+  const trip = {
+    id: 'tp_' + Date.now(),
+    dest,
+    from: document.getElementById('mFrom').value,
+    to:   document.getElementById('mTo').value,
+    status: document.getElementById('mStatus').value,
+    items: [],
+  };
+  // Insert into Supabase first
+  try {
+    const u = window._currentUser || 'GUEST';
+    await sbFetch('trips', 'POST', {
+      id: trip.id,
+      username: u,
+      dest: trip.dest,
+      date_from: trip.from,
+      date_to: trip.to,
+      status: trip.status,
+      items: []
+    });
+  } catch(e) { console.error('Insert trip error:', e); }
+  tpTrips.unshift(trip);
+  tpSelectedId = trip.id;
+  document.getElementById('tpModal').style.display = 'none';
+  document.getElementById('mDest').value = '';
+  document.getElementById('mFrom').value = '';
+  document.getElementById('mTo').value = '';
+  tpRenderList();
+  tpRenderDetail();
+}
+
+// ── Delete Trip ──
+async function tpDeleteTrip() {
+  if (!tpSelectedId) return;
+  const trip = tpTrips.find(t => t.id === tpSelectedId);
+  if (!trip) return;
+  if (!confirm('Delete trip to ' + trip.dest + '? This cannot be undone.')) return;
+  try {
+    await sbFetch('trips?id=eq.' + encodeURIComponent(tpSelectedId), 'DELETE');
+  } catch(e) { console.error('Delete trip error:', e); }
+  tpTrips = tpTrips.filter(t => t.id !== tpSelectedId);
+  tpSelectedId = null;
+  tpRenderList();
+  tpRenderDetail();
+}
+
+// ── Add/Edit Note/Booking Modal ──
+function tpOpenNoteModal(presetCat) {
+  if (!tpSelectedId) return;
+  tpEditNoteId = null;
+  document.getElementById('tpNoteModalTitle').textContent = 'ADD ITEM';
+  document.getElementById('tpNoteSaveBtn').textContent = 'SAVE ITEM ▶';
+  document.getElementById('nTitle').value = '';
+  document.getElementById('nDate').value = '';
+  document.getElementById('nTime').value = '';
+  document.getElementById('nDetails').value = '';
+  document.getElementById('nAmount').value = '';
+  document.getElementById('nStatus').value = 'confirmed';
+  if (presetCat) document.getElementById('nCat').value = presetCat;
+  else document.getElementById('nCat').value = 'flight';
+  document.getElementById('tpNoteModal').style.display = 'flex';
+  document.getElementById('nTitle').focus();
+}
+function tpEditNote(id) {
+  const trip = tpTrips.find(t => t.id === tpSelectedId);
+  if (!trip) return;
+  const item = (trip.items || []).find(i => i.id === id);
+  if (!item) return;
+  tpEditNoteId = id;
+  document.getElementById('tpNoteModalTitle').textContent = 'EDIT ITEM';
+  document.getElementById('tpNoteSaveBtn').textContent = 'UPDATE ITEM ▶';
+  document.getElementById('nCat').value = item.cat;
+  document.getElementById('nTitle').value = item.title;
+  document.getElementById('nDate').value = item.date || '';
+  document.getElementById('nTime').value = item.time || '';
+  document.getElementById('nDetails').value = item.details || '';
+  document.getElementById('nAmount').value = item.amount || '';
+  document.getElementById('nStatus').value = item.status || 'confirmed';
+  document.getElementById('tpNoteModal').style.display = 'flex';
+  document.getElementById('nTitle').focus();
+}
+function tpCloseNoteModal(e) {
+  if (!e || e.target === document.getElementById('tpNoteModal'))
+    document.getElementById('tpNoteModal').style.display = 'none';
+}
+async function tpSaveNote() {
+  const title = document.getElementById('nTitle').value.trim();
+  if (!title) { document.getElementById('nTitle').focus(); return; }
+  const trip = tpTrips.find(t => t.id === tpSelectedId);
+  if (!trip) return;
+  if (!trip.items) trip.items = [];
+  const item = {
+    id:      tpEditNoteId || ('i_' + Date.now()),
+    cat:     document.getElementById('nCat').value,
+    title,
+    date:    document.getElementById('nDate').value,
+    time:    document.getElementById('nTime').value,
+    details: document.getElementById('nDetails').value,
+    amount:  document.getElementById('nAmount').value.trim(),
+    status:  document.getElementById('nStatus').value,
+  };
+  if (tpEditNoteId) {
+    const idx = trip.items.findIndex(i => i.id === tpEditNoteId);
+    if (idx >= 0) trip.items[idx] = item;
+  } else {
+    trip.items.push(item);
+  }
+  await tpSaveTrips();
+  document.getElementById('tpNoteModal').style.display = 'none';
+  tpRenderDetail();
+}
+async function tpDeleteNote(id) {
+  const trip = tpTrips.find(t => t.id === tpSelectedId);
+  if (!trip) return;
+  trip.items = (trip.items || []).filter(i => i.id !== id);
+  await tpSaveTrips();
+  tpRenderDetail();
+}
+
+
+/* ══════════════════════════════════════
+   AI PLANNER — NEXUS-7 trip builder
+══════════════════════════════════════ */
+let aipHistory = [];
+let aipLastPlan = null;
+
+const AIP_SYSTEM = `You are NEXUS-7, an elite AI travel planner. When a user describes a trip, generate a detailed, structured itinerary.
+
+Format your response clearly with these sections (use plain text, no markdown symbols like ** or ##):
+- TRIP OVERVIEW (destination, duration, budget, best time)
+- DAY-BY-DAY ITINERARY (each day numbered, with morning/afternoon/evening activities)  
+- FLIGHTS (suggested departure times, airlines, estimated costs)
+- HOTELS (2-3 options with price range per night)
+- MUST-EAT (3-5 local dishes or restaurants)
+- BUDGET BREAKDOWN (flights, hotel, food, activities, total estimate)
+- PRO TIPS (3-4 insider tips for this destination)
+
+Be specific with real places, real airline routes, realistic prices. Keep it exciting and detailed but scannable.`;
+
+function aipSetPrompt(text) {
+  document.getElementById('aipInput').value = text;
+  document.getElementById('aipInput').focus();
+}
+
+function aipScrollBottom() {
+  const b = document.getElementById('aipMessages');
+  b.scrollTop = b.scrollHeight;
+}
+
+function aipAddMsg(role, text) {
+  const box = document.getElementById('aipMessages');
+  box.querySelector('.aip-welcome')?.remove();
+  const wrap = document.createElement('div');
+  if (role === 'user') {
+    wrap.className = 'aip-msg-user';
+    wrap.textContent = text;
+  } else {
+    const label = document.createElement('div');
+    label.className = 'aip-msg-label';
+    label.textContent = 'NEXUS‑7 TRAVEL PLAN';
+    wrap.className = 'aip-msg-bot';
+    wrap.appendChild(label);
+    // Format the AI text nicely
+    const content = document.createElement('div');
+    content.innerHTML = text
+      .replace(/^(DAY \d+|TRIP OVERVIEW|FLIGHTS|HOTELS|MUST-EAT|BUDGET BREAKDOWN|PRO TIPS|MORNING|AFTERNOON|EVENING):/gm,
+               '<strong>$1:</strong>')
+      .replace(/\n/g, '<br>');
+    wrap.appendChild(content);
+  }
+  box.appendChild(wrap);
+  requestAnimationFrame(aipScrollBottom);
+  return wrap;
+}
+
+function aipShowTyping() {
+  const box = document.getElementById('aipMessages');
+  const wrap = document.createElement('div');
+  wrap.className = 'aip-typing'; wrap.id = 'aipTyping';
+  wrap.innerHTML = '<div class="typing-dots"><div class="td"></div><div class="td"></div><div class="td"></div></div>';
+  box.appendChild(wrap);
+  requestAnimationFrame(aipScrollBottom);
+}
+function aipRemoveTyping() { document.getElementById('aipTyping')?.remove(); }
+
+async function aipSend() {
+  const input = document.getElementById('aipInput');
+  const btn = document.getElementById('aipSendBtn');
+  const text = input.value.trim();
+  if (!text || btn.disabled) return;
+  input.value = ''; input.style.height = 'auto';
+  btn.disabled = true;
+  aipAddMsg('user', text);
+  aipHistory.push({ role:'user', content: text });
+  aipShowTyping();
+  try {
+    const data = await callAI([{ role:'system', content: AIP_SYSTEM }, ...aipHistory], 1500, 0.85);
+    aipRemoveTyping();
+    if (data.choices?.[0]) {
+      const reply = data.choices[0].message.content;
+      aipHistory.push({ role:'assistant', content: reply });
+      aipAddMsg('bot', reply);
+      // Store last plan for saving
+      aipLastPlan = { text: reply, query: text };
+      document.getElementById('aipSaveSection').style.display = 'block';
+    } else {
+      aipAddMsg('bot', '[ERROR: ' + (data.error?.message || 'No response') + ']');
+    }
+  } catch(e) {
+    aipRemoveTyping();
+    aipAddMsg('bot', '[SYSTEM ERROR: ' + e.message + ']');
+  }
+  btn.disabled = false;
+  input.focus();
+}
+
+async function aipSaveToPlanner() {
+  if (!aipLastPlan) return;
+  if (!window._currentUser) { alert('Sign in first to save trips.'); return; }
+  // Extract destination from the query
+  const dest = aipLastPlan.query.substring(0, 60);
+  const today = new Date().toISOString().split('T')[0];
+  const trip = {
+    id: 'tp_' + Date.now(),
+    dest: dest,
+    from: today,
+    to: '',
+    status: 'upcoming',
+    items: [{
+      id: 'i_' + Date.now(),
+      cat: 'note',
+      title: 'AI GENERATED ITINERARY',
+      date: today,
+      time: '',
+      details: aipLastPlan.text.substring(0, 1000),
+      amount: '',
+      status: 'confirmed'
+    }]
+  };
+  try {
+    const u = window._currentUser || 'GUEST';
+    await sbFetch('trips', 'POST', {
+      id: trip.id, username: u, dest: trip.dest,
+      date_from: trip.from, date_to: trip.to,
+      status: trip.status, items: trip.items
+    });
+    tpTrips.unshift(trip);
+    alert('Trip saved to your planner!');
+    switchPage('travel');
+  } catch(e) {
+    alert('Save error: ' + e.message);
+  }
+}
+
+// Enter key on AI planner
+document.getElementById('aipInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); aipSend(); }
+});
+document.getElementById('aipInput').addEventListener('input', () => {
+  const t = document.getElementById('aipInput');
+  t.style.height = 'auto';
+  t.style.height = Math.min(t.scrollHeight, 108) + 'px';
+});
+
+/* ══════════════════════════════════════
+   EXPLORE — AI-powered search
+   Uses NEXUS AI to generate realistic
+   flight/hotel/activity listings
+══════════════════════════════════════ */
+let srxCurrentTab = 'flights';
+let srxLastSearch = null;
+
+function srxTab(tab) {
+  srxCurrentTab = tab;
+  document.querySelectorAll('.srx-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('srxTab' + tab[0].toUpperCase() + tab.slice(1)).classList.add('active');
+  if (srxLastSearch) srxShowTab(srxLastSearch, tab);
+}
+
+function srxResetIfNeeded() {
+  // nothing on switch
+}
+
+async function srxSearch() {
+  const from     = document.getElementById('srxFrom').value.trim();
+  const to       = document.getElementById('srxTo').value.trim();
+  const depart   = document.getElementById('srxDepart').value;
+  const ret      = document.getElementById('srxReturn').value;
+  const travellers = document.getElementById('srxTravellers').value;
+  if (!to) { document.getElementById('srxTo').focus(); return; }
+
+  srxLastSearch = { from, to, depart, ret, travellers };
+  srxShowLoading();
+
+  const prompt = `You are a travel search engine. Generate realistic search results for:
+FROM: ${from || 'Any'} TO: ${to}
+DATES: ${depart || 'flexible'} to ${ret || 'one-way'}, ${travellers} traveller(s)
+
+Return a JSON object with these exact keys:
+{
+  "flights": [4 flight options with: airline, flightNumber, departure, arrival, duration, price, stops, badge(CHEAPEST/FASTEST/POPULAR/DIRECT)],
+  "hotels": [4 hotel options with: name, stars, area, pricePerNight, rating, amenities(array of 3), badge(BEST VALUE/LUXURY/BOUTIQUE/BUDGET)],
+  "activities": [4 activities with: name, type, duration, price, description, badge(MUST DO/POPULAR/HIDDEN GEM/ADVENTURE)],
+  "eat": [4 restaurants/dishes with: name, cuisine, priceRange, mustTry, area, badge(LOCAL FAV/MICHELIN/STREET FOOD/ROOFTOP)]
+}
+Use realistic prices in USD. Make data specific to ${to}. Return ONLY valid JSON, no other text.`;
+
+  try {
+    const data = await callAI([{ role:'user', content: prompt }], 2000, 0.7);
+    if (data.choices?.[0]) {
+      let raw = data.choices[0].message.content.trim();
+      // strip markdown fences if present
+      raw = raw.replace(/^```json\n?|^```\n?|\n?```$/g, '').trim();
+      const results = JSON.parse(raw);
+      srxLastSearch.results = results;
+      srxShowTab(srxLastSearch, srxCurrentTab);
+    } else {
+      srxShowError(data.error?.message || 'No results');
+    }
+  } catch(e) {
+    srxShowError('Search error: ' + e.message);
+  }
+}
+
+function srxShowLoading() {
+  document.getElementById('srxResults').innerHTML = `
+    <div class="srx-loading">
+      <div class="srx-loading-title">SEARCHING ${document.getElementById('srxTo').value.toUpperCase()}...</div>
+      <div class="srx-loading-bar"><div class="srx-loading-fill"></div></div>
+    </div>`;
+}
+
+function srxShowError(msg) {
+  document.getElementById('srxResults').innerHTML =
+    '<div class="srx-placeholder"><div class="srx-ph-title">ERROR</div><div class="srx-ph-sub">' + msg + '</div></div>';
+}
+
+function srxShowTab(search, tab) {
+  const results = search.results;
+  if (!results) return;
+  const box = document.getElementById('srxResults');
+  let html = '';
+
+  if (tab === 'flights') {
+    html = '<div class="srx-section-title">✈ FLIGHTS — ' + (search.from||'ANY') + ' → ' + search.to.toUpperCase() + '</div><div class="srx-grid">';
+    (results.flights || []).forEach(f => {
+      html += `<div class="srx-card">
+        <div class="srx-card-badge ${f.badge==='CHEAPEST'?'good':f.badge==='DIRECT'?'good':'ok'}">${f.badge||''}</div>
+        <div class="srx-card-icon">✈</div>
+        <div class="srx-card-title">${f.airline} · ${f.flightNumber||''}</div>
+        <div class="srx-card-meta">
+          ${f.departure} → ${f.arrival}<br>
+          Duration: ${f.duration} · ${f.stops||'Direct'}
+        </div>
+        <div class="srx-card-price">$${f.price} <span>/ PERSON</span></div>
+        <button class="srx-book-btn" onclick="srxBookLink('flight','${encodeURIComponent(search.from||'')}','${encodeURIComponent(search.to)}','${search.depart||''}','${search.ret||''}')">SEARCH ON SKYSCANNER ↗</button>
+        <button class="srx-add-trip-btn" onclick="srxAddToTrip('✈ ${f.airline} ${f.flightNumber||''}','flight','${search.depart||''}','$${f.price}')">+ ADD TO TRIP</button>
+      </div>`;
+    });
+    html += '</div>';
+
+  } else if (tab === 'hotels') {
+    html = '<div class="srx-section-title">🏨 HOTELS IN ' + search.to.toUpperCase() + '</div><div class="srx-grid">';
+    (results.hotels || []).forEach(h => {
+      html += `<div class="srx-card">
+        <div class="srx-card-badge ${h.badge==='BEST VALUE'?'good':h.badge==='BUDGET'?'ok':'ok'}">${h.badge||''}</div>
+        <div class="srx-card-icon">🏨</div>
+        <div class="srx-card-title">${h.name}</div>
+        <div class="srx-card-meta">
+          ${'★'.repeat(h.stars||3)} · ${h.area}<br>
+          ${(h.amenities||[]).join(' · ')}<br>
+          Rating: ${h.rating||'--'}/10
+        </div>
+        <div class="srx-card-price">$${h.pricePerNight} <span>/ NIGHT</span></div>
+        <button class="srx-book-btn" onclick="srxBookLink('hotel','','${encodeURIComponent(search.to)}','${search.depart||''}','${search.ret||''}')">SEARCH ON BOOKING.COM ↗</button>
+        <button class="srx-add-trip-btn" onclick="srxAddToTrip('🏨 ${h.name}','hotel','${search.depart||''}','$${h.pricePerNight}/night')">+ ADD TO TRIP</button>
+      </div>`;
+    });
+    html += '</div>';
+
+  } else if (tab === 'activities') {
+    html = '<div class="srx-section-title">🎬 ACTIVITIES IN ' + search.to.toUpperCase() + '</div><div class="srx-grid">';
+    (results.activities || []).forEach(a => {
+      html += `<div class="srx-card">
+        <div class="srx-card-badge ${a.badge==='MUST DO'?'good':a.badge==='HIDDEN GEM'?'ok':'ok'}">${a.badge||''}</div>
+        <div class="srx-card-icon">🎬</div>
+        <div class="srx-card-title">${a.name}</div>
+        <div class="srx-card-meta">
+          ${a.type||''} · ${a.duration||''}<br>
+          ${a.description||''}
+        </div>
+        <div class="srx-card-price">$${a.price} <span>/ PERSON</span></div>
+        <button class="srx-book-btn" onclick="srxBookLink('activity','','${encodeURIComponent(search.to)}','${search.depart||''}','')">SEARCH ON VIATOR ↗</button>
+        <button class="srx-add-trip-btn" onclick="srxAddToTrip('🎬 ${a.name}','activity','${search.depart||''}','$${a.price}')">+ ADD TO TRIP</button>
+      </div>`;
+    });
+    html += '</div>';
+
+  } else if (tab === 'eat') {
+    html = '<div class="srx-section-title">🍽 DINING IN ' + search.to.toUpperCase() + '</div><div class="srx-grid">';
+    (results.eat || []).forEach(r => {
+      html += `<div class="srx-card">
+        <div class="srx-card-badge ${r.badge==='LOCAL FAV'?'good':r.badge==='MICHELIN'?'ok':'ok'}">${r.badge||''}</div>
+        <div class="srx-card-icon">🍽</div>
+        <div class="srx-card-title">${r.name}</div>
+        <div class="srx-card-meta">
+          ${r.cuisine||''} · ${r.area||''}<br>
+          Must try: ${r.mustTry||''}
+        </div>
+        <div class="srx-card-price">${r.priceRange||'$$'} <span>PRICE RANGE</span></div>
+        <button class="srx-book-btn" onclick="srxBookLink('eat','','${encodeURIComponent(search.to)}','','')">SEARCH ON TRIPADVISOR ↗</button>
+        <button class="srx-add-trip-btn" onclick="srxAddToTrip('🍽 ${r.name}','restaurant','${search.depart||''}','${r.priceRange||''}')">+ ADD TO TRIP</button>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  box.innerHTML = html;
+}
+
+function srxBookLink(type, from, to, dep, ret) {
+  const urls = {
+    flight: `https://www.skyscanner.com/transport/flights/${from}/${to}/${dep}/${ret}/`,
+    hotel:  `https://www.booking.com/searchresults.html?ss=${to}&checkin=${dep}&checkout=${ret}`,
+    activity: `https://www.viator.com/search/?text=${to}`,
+    eat:    `https://www.tripadvisor.com/Search?q=${to}+restaurants`
+  };
+  window.open(urls[type] || 'https://www.google.com/travel', '_blank');
+}
+
+async function srxAddToTrip(title, cat, date, amount) {
+  if (!tpTrips.length) {
+    alert('Create a trip in the TRAVEL tab first, then add items to it.');
+    return;
+  }
+  // Add to the most recently selected trip or first trip
+  const trip = tpTrips.find(t => t.id === tpSelectedId) || tpTrips[0];
+  if (!trip.items) trip.items = [];
+  const item = {
+    id: 'i_' + Date.now(),
+    cat, title, date,
+    time: '', details: '', amount, status: 'confirmed'
+  };
+  trip.items.push(item);
+  try {
+    await sbFetch('trips?id=eq.' + encodeURIComponent(trip.id), 'PATCH', {
+      items: trip.items
+    });
+    // Small toast
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0d1a0d;border:1px solid #7ab87a;color:#7ab87a;font-family:Orbitron,monospace;font-size:9px;letter-spacing:2px;padding:10px 20px;border-radius:2px;z-index:99999;animation:msgin .3s ease-out';
+    toast.textContent = '✓ ADDED TO ' + trip.dest.toUpperCase();
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
+  } catch(e) {
+    alert('Save error: ' + e.message);
+  }
+}
+
+</script>
+</body>
+</html>
